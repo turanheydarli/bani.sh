@@ -1,0 +1,213 @@
+package mcp
+
+import (
+	"bufio"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"strings"
+
+	"go.bani.sh/banish/internal/interpreter"
+)
+
+// Server exposes banish verbs as MCP tools via JSON-RPC over stdio.
+type Server struct {
+	interp *interpreter.Interpreter
+}
+
+// NewServer creates an MCP server wrapping the interpreter.
+func NewServer(interp *interpreter.Interpreter) *Server {
+	return &Server{interp: interp}
+}
+
+// Serve runs the MCP server loop, reading JSON-RPC from stdin and writing to stdout.
+func (s *Server) Serve(ctx context.Context) error {
+	scanner := bufio.NewScanner(os.Stdin)
+	writer := os.Stdout
+
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+
+		var req Request
+		if err := json.Unmarshal(line, &req); err != nil {
+			s.writeError(writer, 0, -32700, "parse error")
+			continue
+		}
+
+		resp := s.handleRequest(ctx, &req)
+		s.writeResponse(writer, resp)
+	}
+
+	return scanner.Err()
+}
+
+func (s *Server) handleRequest(ctx context.Context, req *Request) *Response {
+	switch req.Method {
+	case "initialize":
+		return s.handleInitialize(req)
+	case "notifications/initialized":
+		return nil // notification, no response
+	case "tools/list":
+		return s.handleToolsList(req)
+	case "tools/call":
+		return s.handleToolsCall(ctx, req)
+	default:
+		return &Response{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &RPCError{Code: -32601, Message: fmt.Sprintf("method not found: %s", req.Method)},
+		}
+	}
+}
+
+func (s *Server) handleInitialize(req *Request) *Response {
+	result, _ := json.Marshal(map[string]any{
+		"protocolVersion": "2024-11-05",
+		"serverInfo": map[string]string{
+			"name":    "banish",
+			"version": "dev",
+		},
+		"capabilities": map[string]any{
+			"tools": map[string]any{},
+		},
+	})
+
+	return &Response{JSONRPC: "2.0", ID: req.ID, Result: result}
+}
+
+func (s *Server) handleToolsList(req *Request) *Response {
+	tools := s.buildToolsList()
+
+	result, _ := json.Marshal(map[string]any{"tools": tools})
+	return &Response{JSONRPC: "2.0", ID: req.ID, Result: result}
+}
+
+func (s *Server) handleToolsCall(ctx context.Context, req *Request) *Response {
+	var params ToolCallParams
+	if req.Params != nil {
+		raw, _ := json.Marshal(req.Params)
+		json.Unmarshal(raw, &params)
+	}
+
+	// Execute via banish interpreter using EvalSource.
+	// Strip "banish_" prefix from tool name to get the actual verb.
+	verb := strings.TrimPrefix(params.Name, "banish_")
+
+	// Special case: banish_run takes a "script" argument that IS the command.
+	var cmd string
+	if verb == "run" {
+		if script, ok := params.Arguments["script"]; ok {
+			cmd = fmt.Sprintf("%v", script)
+		}
+	} else {
+		cmd = verb
+		// First positional arg (e.g. "path" for ls/read)
+		for _, key := range []string{"path", "url", "target", "name"} {
+			if v, ok := params.Arguments[key]; ok {
+				cmd += fmt.Sprintf(" %v", v)
+				delete(params.Arguments, key)
+				break
+			}
+		}
+		// Remaining args as modifiers
+		for k, v := range params.Arguments {
+			cmd += fmt.Sprintf(" %s:%v", k, v)
+		}
+	}
+
+	r, err := s.interp.EvalSource(cmd)
+	if err != nil {
+		return &Response{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &RPCError{Code: -32000, Message: err.Error()},
+		}
+	}
+
+	var text string
+	if r != nil {
+		b, _ := r.JSON()
+		text = string(b)
+	}
+
+	result, _ := json.Marshal(ToolResult{
+		Content: []ContentBlock{{Type: "text", Text: text}},
+	})
+
+	return &Response{JSONRPC: "2.0", ID: req.ID, Result: result}
+}
+
+func (s *Server) buildToolsList() []ToolDef {
+	// Core tools with examples in descriptions (for agent in-context learning).
+	return []ToolDef{
+		{
+			Name:        "banish_run",
+			Description: "Execute a banish or bash command. Returns structured JSON.\n\nExamples:\n  ls /var/log ext:log\n  echo \"hello\" | count\n  find /tmp -name \"*.txt\"\n  @github issues repo:acme/api",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"script": map[string]string{"type": "string", "description": "Command to execute (banish or bash syntax)"},
+				},
+				"required": []string{"script"},
+			},
+		},
+		{
+			Name:        "banish_ls",
+			Description: "List files with structured output. Returns JSON records with name (n), size (s), modified date (t).\n\nExamples:\n  path=/var/log\n  path=/var/log, ext=log\n  path=., ext=go",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"path": map[string]string{"type": "string", "description": "Directory path"},
+					"ext":  map[string]string{"type": "string", "description": "Filter by extension"},
+				},
+				"required": []string{"path"},
+			},
+		},
+		{
+			Name:        "banish_read",
+			Description: "Read file contents. Returns file content as string.\n\nExamples:\n  path=config.yaml\n  path=/etc/hosts",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"path": map[string]string{"type": "string", "description": "File path to read"},
+				},
+				"required": []string{"path"},
+			},
+		},
+		{
+			Name:        "banish_fetch",
+			Description: "HTTP request. Returns status, body, headers as JSON.\n\nExamples:\n  url=https://api.example.com\n  url=https://api.example.com, method=POST",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"url":    map[string]string{"type": "string", "description": "URL to fetch"},
+					"method": map[string]string{"type": "string", "description": "HTTP method (default GET)"},
+				},
+				"required": []string{"url"},
+			},
+		},
+	}
+}
+
+func (s *Server) writeResponse(w io.Writer, resp *Response) {
+	if resp == nil {
+		return
+	}
+	data, _ := json.Marshal(resp)
+	data = append(data, '\n')
+	w.Write(data)
+}
+
+func (s *Server) writeError(w io.Writer, id int, code int, msg string) {
+	resp := &Response{
+		JSONRPC: "2.0",
+		ID:      id,
+		Error:   &RPCError{Code: code, Message: msg},
+	}
+	s.writeResponse(w, resp)
+}

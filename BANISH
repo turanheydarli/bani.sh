@@ -1,0 +1,43 @@
+# BANISH -- banish
+
+# Build
+!verb build
+!expand exec go build -ldflags "-X main.version=dev" -o bin/banish ./cmd/banish
+
+!verb clean
+!expand exec rm -rf bin/
+
+# Test
+!verb test
+!expand exec go test -race -count=1 ./...
+
+!verb test-only
+!expand exec go test -count=1 ./...
+
+# Quality
+!verb vet
+!expand exec go vet ./...
+
+!verb lint
+!expand exec go vet ./... && staticcheck ./...
+
+!verb vuln
+!expand exec govulncheck ./...
+
+!verb check
+!expand exec go test -race -count=1 ./... && go vet ./... && staticcheck ./...
+
+# Modules
+!verb tidy
+!expand exec go mod tidy
+
+!verb deps
+!expand exec go get -u -v ./... && go mod tidy
+
+# Tools
+!verb tools
+!expand exec go install honnef.co/go/tools/cmd/staticcheck@latest && go install golang.org/x/vuln/cmd/govulncheck@latest
+
+!config
+!timeout "60s"
+!output json
