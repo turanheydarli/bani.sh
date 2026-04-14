@@ -188,18 +188,21 @@ func parseVerbDetails(prog *ast.Program, ext *ExtensionMeta) {
 		case "verb":
 			currentVerb++
 		default:
-			// Check if this looks like a verb property (args, expand, help).
 			if currentVerb >= 0 && currentVerb < len(ext.Verbs) {
+				// Join all args into a single string for the property value.
+				var parts []string
 				for _, arg := range dir.Args {
-					s := arg.String()
-					switch {
-					case strings.HasPrefix(dir.Name, "args"):
-						ext.Verbs[currentVerb].Args = append(ext.Verbs[currentVerb].Args, s)
-					case dir.Name == "expand":
-						ext.Verbs[currentVerb].Expand = s
-					case dir.Name == "help":
-						ext.Verbs[currentVerb].Help = strings.Trim(s, "\"")
-					}
+					parts = append(parts, arg.String())
+				}
+				val := strings.Join(parts, " ")
+
+				switch {
+				case strings.HasPrefix(dir.Name, "args"):
+					ext.Verbs[currentVerb].Args = append(ext.Verbs[currentVerb].Args, parts...)
+				case dir.Name == "expand":
+					ext.Verbs[currentVerb].Expand = val
+				case dir.Name == "help":
+					ext.Verbs[currentVerb].Help = strings.Trim(val, "\"")
 				}
 			}
 		}
