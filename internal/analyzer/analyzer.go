@@ -4,6 +4,7 @@ package analyzer
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -58,10 +59,21 @@ func (a *Analyzer) Track(e Entry) {
 	defer a.mu.Unlock()
 	a.entries = append(a.entries, e)
 	a.freq[e.Command]++
-	// Also track by base command name if different from full command.
-	if parts := strings.Fields(e.Command); len(parts) > 1 {
-		a.freq[parts[0]]++
+
+	// Also track by normalized base command name.
+	base := normalizeCmd(e.Command)
+	if base != "" && base != e.Command {
+		a.freq[base]++
 	}
+}
+
+// normalizeCmd extracts the base command name, stripping paths.
+func normalizeCmd(cmd string) string {
+	parts := strings.Fields(cmd)
+	if len(parts) == 0 {
+		return ""
+	}
+	return filepath.Base(parts[0])
 }
 
 // SessionStats returns stats for the current session.
