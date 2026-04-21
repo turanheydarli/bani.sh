@@ -248,28 +248,6 @@ If you find a security issue, please email (not a public issue): security contac
 
 ---
 
-## FAQ
-
-**Does banish replace my shell?**
-No. It sits between the agent's Bash tool and your shell. When you type in your terminal, nothing changes.
-
-**What happens if banish isn't installed and the hook runs?**
-The hook checks for `banish` and `jq` in PATH, exits cleanly if either is missing. Your commands run unchanged.
-
-**Can I disable banish for one command?**
-Prefix with any of the skip patterns: `cd `, `export `, `source `, `alias `, `eval `. Or pipe with `RTK_DISABLED=1` -- no, wait, that's rtk. For banish, add the command pattern to the `case` block in `~/.claude/hooks/banish-hook.sh`.
-
-**Will it work with GitHub Copilot / Codex / Continue / Cline?**
-Any agent that supports MCP stdio servers can use `banish serve` directly. The PreToolUse hook pattern is Claude Code-specific -- other agents will only see banish through MCP tool calls, not via automatic bash rewriting.
-
-**Does it support Windows?**
-Not yet. The hook is bash-only. WSL works. Native PowerShell port is on the list.
-
-**How is this different from rtk?**
-rtk inspired the architecture. Differences: banish is Go (simpler to build and contribute), has MCP-native tool exposure (rtk is CLI-only), uses `.bsh` script extensions instead of TOML filter config, and includes a full scripting runtime. Filter coverage is currently smaller than rtk's 100+; we expect the .bsh format to make community contribution faster.
-
----
-
 ## License
 
 MIT.
