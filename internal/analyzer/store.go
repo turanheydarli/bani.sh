@@ -12,7 +12,9 @@ import (
 type freqRecord struct {
 	Command   string    `json:"cmd"`
 	Count     int       `json:"n"`
-	TokenCost int       `json:"tok"`
+	TokenCost int64     `json:"tok"`
+	RawToks   int64     `json:"raw,omitempty"`   // tokens before compaction
+	SavedToks int64     `json:"saved,omitempty"` // tokens saved by compaction
 	LastSeen  time.Time `json:"ts"`
 }
 
@@ -51,16 +53,28 @@ func (a *Analyzer) LoadFrequency() {
 		if r.LastSeen.Before(cutoff) {
 			continue
 		}
+		// Sanitize corrupted token values (overflow from previous versions)
+		if r.TokenCost < 0 || r.TokenCost > 1000000000 {
+			r.TokenCost = 0
+		}
+		if r.RawToks < 0 {
+			r.RawToks = 0
+		}
+		if r.SavedToks < 0 {
+			r.SavedToks = 0
+		}
 		a.freq[r.Command] += r.Count
 		// Also track base command name
 		if parts := strings.Fields(r.Command); len(parts) > 1 {
 			a.freq[parts[0]] += r.Count
 		}
 		a.entries = append(a.entries, Entry{
-			Timestamp: r.LastSeen,
-			Command:   r.Command,
-			InputToks: r.TokenCost / 2,
+			Timestamp:  r.LastSeen,
+			Command:    r.Command,
+			InputToks:  r.TokenCost / 2,
 			OutputToks: r.TokenCost / 2,
+			RawToks:    r.RawToks,
+			SavedToks:  r.SavedToks,
 		})
 	}
 }
@@ -81,10 +95,20 @@ func (a *Analyzer) SaveFrequency() {
 		json.Unmarshal(data, &existing)
 	}
 
-	// Build map from existing
+	// Build map from existing, sanitizing corrupted values
 	recs := make(map[string]*freqRecord)
 	for i := range existing {
-		recs[existing[i].Command] = &existing[i]
+		r := &existing[i]
+		if r.TokenCost < 0 || r.TokenCost > 1000000000 {
+			r.TokenCost = 0
+		}
+		if r.RawToks < 0 || r.RawToks > 1000000000 {
+			r.RawToks = 0
+		}
+		if r.SavedToks < 0 || r.SavedToks > 1000000000 {
+			r.SavedToks = 0
+		}
+		recs[r.Command] = r
 	}
 
 	// Merge current session entries
@@ -100,6 +124,8 @@ func (a *Analyzer) SaveFrequency() {
 		}
 		r.Count++
 		r.TokenCost += e.InputToks + e.OutputToks
+		r.RawToks += e.RawToks
+		r.SavedToks += e.SavedToks
 		if e.Timestamp.After(r.LastSeen) {
 			r.LastSeen = e.Timestamp
 		}

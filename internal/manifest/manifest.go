@@ -19,8 +19,16 @@ type BanishFile struct {
 	Servers  []ServerDecl
 	Mappings []VerbMapping
 	Verbs    []VerbDef
+	Filters  []FilterDef
 	Config   ProjectConfig
 	Examples []string
+}
+
+// FilterDef is a project-specific output filter.
+type FilterDef struct {
+	Name    string
+	Match   string // command pattern
+	Compact string // shell command for filtering (receives stdin)
 }
 
 // ServerDecl declares an MCP server.
@@ -199,6 +207,30 @@ func ParseBanishFile(content string, path string) (*BanishFile, error) {
 				}
 			}
 			bf.Verbs = append(bf.Verbs, v)
+
+		case "filter":
+			f := FilterDef{}
+			if len(dir.Args) >= 1 {
+				f.Name = dir.Args[0].String()
+			}
+			for j := i + 1; j < len(prog.Statements); j++ {
+				prop, ok := prog.Statements[j].(*ast.Directive)
+				if !ok {
+					break
+				}
+				if prop.Name == "server" || prop.Name == "map" || prop.Name == "verb" ||
+					prop.Name == "filter" || prop.Name == "config" || prop.Name == "examples" {
+					break
+				}
+				val := argsString(prop.Args)
+				switch prop.Name {
+				case "match":
+					f.Match = val
+				case "compact":
+					f.Compact = val
+				}
+			}
+			bf.Filters = append(bf.Filters, f)
 
 		case "config":
 			for j := i + 1; j < len(prog.Statements); j++ {

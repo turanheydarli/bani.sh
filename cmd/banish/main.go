@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"go.bani.sh/banish/internal/analyzer"
+	"go.bani.sh/banish/internal/compact"
 	"go.bani.sh/banish/internal/extension"
 	"go.bani.sh/banish/internal/interpreter"
 	"go.bani.sh/banish/internal/manifest"
@@ -105,16 +106,14 @@ func execDirect(source string) {
 
 	if result != nil {
 		outputToks := analyzer.EstimateTokens(result.String())
-		savings := 0
-		if result.Hint != nil {
-			savings = result.Hint.Saved
-		}
+
 		tracker.Track(analyzer.Entry{
 			Timestamp:  time.Now(),
 			Command:    source,
 			InputToks:  inputToks,
 			OutputToks: outputToks,
-			Savings:    savings,
+			RawToks:    result.RawTokens,
+			SavedToks:  result.RawTokens - result.OutTokens,
 		})
 
 		// Check for extension suggestion based on accumulated frequency
@@ -185,12 +184,22 @@ func newInterpreter() *interpreter.Interpreter {
 	reg := interpreter.NewVerbRegistry()
 	runtime.RegisterBuiltins(reg)
 
+	// Collect script-based filters from extensions and manifest.
+	var scriptFilters []compact.ScriptFilterDef
+
 	// Load extensions from ~/.banish/ext/
 	home, _ := os.UserHomeDir()
 	if home != "" {
 		loader := extension.NewLoader()
 		loader.LoadDir(filepath.Join(home, ".banish", "ext"))
 		loader.Register(reg)
+
+		// Collect filters from extensions
+		for _, f := range loader.Filters() {
+			scriptFilters = append(scriptFilters, compact.ScriptFilterDef{
+				Name: f.Name, Match: f.Match, Compact: f.Compact,
+			})
+		}
 	}
 
 	// Load BANISH project manifest (walk up from cwd)
@@ -203,12 +212,18 @@ func newInterpreter() *interpreter.Interpreter {
 			for _, v := range bf.Verbs {
 				reg.RegisterExtension(v.Name, extension.MakeVerbHandler(v.Name, v.Expand))
 			}
+			// Collect filters from BANISH manifest
+			for _, f := range bf.Filters {
+				scriptFilters = append(scriptFilters, compact.ScriptFilterDef{
+					Name: f.Name, Match: f.Match, Compact: f.Compact,
+				})
+			}
 		}
 	}
 
 	// System fallback: unknown verbs exec through shell.
 	exec := runtime.NewExecutor()
-	fallback := runtime.FallbackHandler(exec)
+	fallback := runtime.FallbackHandler(exec, scriptFilters)
 	reg.SetFallback(fallback)
 	reg.RegisterBuiltin("__fallback__", fallback)
 

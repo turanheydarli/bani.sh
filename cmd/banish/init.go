@@ -14,8 +14,8 @@ func initCmd() *cobra.Command {
 		Use:   "init [claude-code|cursor|mcp]",
 		Short: "Set up banish for a project or agent",
 		Long: `Initialize banish:
-  banish init              Create a starter BANISH file
-  banish init claude-code  Set up for Claude Code (MCP + CLAUDE.md)
+  banish init              Create a starter BANISH file for this project
+  banish init claude-code  Global setup (hooks + extensions + CLAUDE.md)
   banish init cursor       Set up for Cursor (MCP + .cursorrules)
   banish init mcp          MCP config only (for other agents)`,
 		Args: cobra.MaximumNArgs(1),
@@ -35,7 +35,14 @@ func initCmd() *cobra.Command {
 				if err := scaffold.InitClaudeCode(dir); err != nil {
 					return err
 				}
-				fmt.Println("{\"ok\":true,\"created\":[\".mcp.json\",\"CLAUDE.md\"]}")
+				fmt.Println("banish configured globally for Claude Code.")
+				fmt.Println("  ~/.banish/ext/        extensions deployed")
+				fmt.Println("  ~/.claude/.mcp.json   MCP server registered")
+				fmt.Println("  ~/.claude/hooks/      bash hook installed")
+				fmt.Println("  ~/.claude/settings.json  hook registered")
+				fmt.Println("  ~/.claude/CLAUDE.md   context added")
+				fmt.Println("")
+				fmt.Println("All Claude Code sessions will now use banish automatically.")
 
 			case "cursor":
 				if err := scaffold.InitCursor(dir); err != nil {

@@ -46,16 +46,14 @@ func runCmd() *cobra.Command {
 
 			if result != nil {
 				outputToks := analyzer.EstimateTokens(result.String())
-				savings := 0
-				if result.Hint != nil {
-					savings = result.Hint.Saved
-				}
+
 				tracker.Track(analyzer.Entry{
-					Timestamp: time.Now(),
-					Command:   source,
-					InputToks: inputToks,
+					Timestamp:  time.Now(),
+					Command:    source,
+					InputToks:  inputToks,
 					OutputToks: outputToks,
-					Savings:   savings,
+					RawToks:    result.RawTokens,
+					SavedToks:  result.RawTokens - result.OutTokens,
 				})
 
 				// Check for extension suggestion

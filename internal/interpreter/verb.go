@@ -47,6 +47,27 @@ func (r *VerbRegistry) SetFallback(h VerbHandler) {
 	r.fallback = h
 }
 
+// ExtensionNames returns the names of all registered extension verbs.
+func (r *VerbRegistry) ExtensionNames() []string {
+	names := make([]string, 0, len(r.extensions))
+	for name := range r.extensions {
+		names = append(names, name)
+	}
+	return names
+}
+
+// BuiltinNames returns the names of all registered builtin verbs.
+func (r *VerbRegistry) BuiltinNames() []string {
+	names := make([]string, 0, len(r.builtins))
+	for name := range r.builtins {
+		if name == "__fallback__" {
+			continue
+		}
+		names = append(names, name)
+	}
+	return names
+}
+
 // Resolve looks up a verb by name in priority order:
 // builtins -> extensions -> MCP -> fallback.
 func (r *VerbRegistry) Resolve(name string) (VerbHandler, error) {

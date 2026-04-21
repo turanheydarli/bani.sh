@@ -38,6 +38,11 @@
 !verb tools
 !expand exec go install honnef.co/go/tools/cmd/staticcheck@latest && go install golang.org/x/vuln/cmd/govulncheck@latest
 
+# Filters -- compact command output for token savings
+!filter go-test
+!match go test
+!compact "grep -E '^(ok|FAIL|---)' | head -30"
+
 !config
 !timeout "60s"
 !output json

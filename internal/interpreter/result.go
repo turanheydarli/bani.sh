@@ -10,6 +10,11 @@ type Result struct {
 	Data any               // the result value
 	Hint *Hint             // optional _hint for shorter alternative
 	Meta map[string]any    // additional response metadata
+
+	// Internal tracking -- NOT serialized to JSON output.
+	RawTokens   int64 // tokens before compaction
+	OutTokens   int64 // tokens after compaction
+	SavedPct    int   // savings percentage
 }
 
 // Hint suggests a shorter banish alternative for a bash command.

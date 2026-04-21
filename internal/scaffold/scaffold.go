@@ -1,5 +1,5 @@
 // Package scaffold implements banish init commands that set up project manifests,
-// agent hooks, and MCP server configuration.
+// agent hooks, MCP server configuration, and deploy default extensions.
 package scaffold
 
 import (
@@ -24,19 +24,53 @@ func InitProject(dir string) error {
 	return os.WriteFile(path, []byte(content), 0644)
 }
 
-// InitClaudeCode sets up banish for Claude Code: MCP config + hook + CLAUDE.md.
+// InitClaudeCode does full GLOBAL setup: extensions, hooks, CLAUDE.md.
+// Everything goes to ~/  -- works for all projects, all Claude Code sessions.
+// Optionally creates .mcp.json in cwd if it looks like a project directory.
 func InitClaudeCode(dir string) error {
-	if err := writeMCPConfig(filepath.Join(dir, ".mcp.json")); err != nil {
+	home, _ := os.UserHomeDir()
+	if home == "" {
+		return fmt.Errorf("cannot determine home directory")
+	}
+
+	// 1. Deploy default extensions to ~/.banish/ext/
+	if _, err := deployExtensions(home); err != nil {
+		return fmt.Errorf("deploy extensions: %w", err)
+	}
+
+	// 2. Install global hook to ~/.claude/hooks/
+	if err := installHook(home); err != nil {
+		return fmt.Errorf("install hook: %w", err)
+	}
+
+	// 3. Register hook in ~/.claude/settings.json
+	if err := registerHook(home); err != nil {
+		return fmt.Errorf("register hook: %w", err)
+	}
+
+	// 4. Create global MCP config at ~/.claude/.mcp.json
+	globalMCP := filepath.Join(home, ".claude", ".mcp.json")
+	if err := writeMCPConfig(globalMCP); err != nil {
+		return fmt.Errorf("global MCP config: %w", err)
+	}
+
+	// 5. Append banish context to global ~/.claude/CLAUDE.md
+	claudeMDPath := filepath.Join(home, ".claude", "CLAUDE.md")
+	if err := writeClaudeMD(claudeMDPath); err != nil {
 		return err
 	}
-	if err := writeClaudeMD(filepath.Join(dir, "CLAUDE.md")); err != nil {
-		return err
-	}
+
 	return nil
 }
 
+
 // InitCursor sets up banish for Cursor: MCP config + .cursorrules.
 func InitCursor(dir string) error {
+	home, _ := os.UserHomeDir()
+	if home != "" {
+		deployExtensions(home)
+	}
+
 	cursorDir := filepath.Join(dir, ".cursor")
 	os.MkdirAll(cursorDir, 0755)
 
@@ -51,14 +85,149 @@ func InitCursor(dir string) error {
 
 // InitMCPOnly writes just the MCP server config.
 func InitMCPOnly(dir string) error {
+	home, _ := os.UserHomeDir()
+	if home != "" {
+		deployExtensions(home)
+	}
 	return writeMCPConfig(filepath.Join(dir, ".mcp.json"))
 }
+
+// --- Extension deployment ---
+
+// deployExtensions writes default .bsh extensions to ~/.banish/ext/.
+// Skips files that already exist (user may have customized them).
+// Returns count of newly created files.
+func deployExtensions(home string) (int, error) {
+	extDir := filepath.Join(home, ".banish", "ext")
+	os.MkdirAll(extDir, 0755)
+
+	created := 0
+	for name, content := range defaultExtensions {
+		path := filepath.Join(extDir, name)
+		if _, err := os.Stat(path); err == nil {
+			continue // don't overwrite user customizations
+		}
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			return created, err
+		}
+		created++
+	}
+	return created, nil
+}
+
+// --- Hook installation ---
+
+const hookScript = `#!/bin/bash
+# banish-hook.sh -- Route bash commands through banish for output compaction.
+# Installed by: banish init claude-code
+
+if ! command -v jq &>/dev/null; then exit 0; fi
+if ! command -v banish &>/dev/null; then exit 0; fi
+
+INPUT=$(cat)
+CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+
+[ -z "$CMD" ] && exit 0
+
+# Skip: already banish, shell builtins, multi-line scripts, heredocs
+case "$CMD" in
+  banish*) exit 0 ;;
+  cd\ *|export\ *|source\ *|alias\ *|eval\ *) exit 0 ;;
+  *$'\n'*) exit 0 ;;
+  *"<<"*) exit 0 ;;
+  *EOF*) exit 0 ;;
+esac
+
+# Wrap: banish "original command"
+# Use printf to avoid quote escaping issues
+WRAPPED=$(printf 'banish "%s"' "$(echo "$CMD" | sed 's/"/\\"/g')")
+
+echo "$INPUT" | jq -c --arg cmd "$WRAPPED" '{
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: "allow",
+    permissionDecisionReason: "banish output compaction",
+    updatedInput: { command: $cmd }
+  }
+}'
+`
+
+func installHook(home string) error {
+	hookDir := filepath.Join(home, ".claude", "hooks")
+	os.MkdirAll(hookDir, 0755)
+
+	hookPath := filepath.Join(hookDir, "banish-hook.sh")
+	if err := os.WriteFile(hookPath, []byte(hookScript), 0755); err != nil {
+		return err
+	}
+	return nil
+}
+
+func registerHook(home string) error {
+	settingsPath := filepath.Join(home, ".claude", "settings.json")
+	hookPath := filepath.Join(home, ".claude", "hooks", "banish-hook.sh")
+
+	var settings map[string]any
+
+	if data, err := os.ReadFile(settingsPath); err == nil {
+		json.Unmarshal(data, &settings)
+	}
+	if settings == nil {
+		settings = make(map[string]any)
+	}
+
+	// Remove any existing banish hooks, then add the current one.
+	hooks, _ := settings["hooks"].(map[string]any)
+	if hooks == nil {
+		hooks = make(map[string]any)
+	}
+
+	pre, _ := hooks["PreToolUse"].([]any)
+	var filtered []any
+	for _, entry := range pre {
+		isBanish := false
+		if m, ok := entry.(map[string]any); ok {
+			if innerHooks, ok := m["hooks"].([]any); ok {
+				for _, h := range innerHooks {
+					if hm, ok := h.(map[string]any); ok {
+						if cmd, ok := hm["command"].(string); ok {
+							if strings.Contains(cmd, "banish") {
+								isBanish = true
+							}
+						}
+					}
+				}
+			}
+		}
+		if !isBanish {
+			filtered = append(filtered, entry)
+		}
+	}
+
+	// Add current hook
+	filtered = append(filtered, map[string]any{
+		"matcher": "Bash",
+		"hooks": []any{
+			map[string]any{
+				"type":    "command",
+				"command": hookPath,
+				"timeout": 30,
+			},
+		},
+	})
+	hooks["PreToolUse"] = filtered
+	settings["hooks"] = hooks
+
+	out, _ := json.MarshalIndent(settings, "", "  ")
+	return os.WriteFile(settingsPath, append(out, '\n'), 0644)
+}
+
+// --- MCP config ---
 
 func writeMCPConfig(path string) error {
 	banishBin := findBanishBinary()
 
 	if _, err := os.Stat(path); err == nil {
-		// Merge into existing file
 		data, _ := os.ReadFile(path)
 		var existing map[string]any
 		json.Unmarshal(data, &existing)
@@ -70,7 +239,7 @@ func writeMCPConfig(path string) error {
 			servers = make(map[string]any)
 		}
 		if _, ok := servers["banish"]; ok {
-			return nil // already configured
+			return nil
 		}
 		servers["banish"] = map[string]any{
 			"command": banishBin,
@@ -93,7 +262,6 @@ func writeMCPConfig(path string) error {
 	return os.WriteFile(path, append(out, '\n'), 0644)
 }
 
-// findBanishBinary returns the full path to the banish binary.
 func findBanishBinary() string {
 	exe, err := os.Executable()
 	if err == nil {
@@ -106,35 +274,34 @@ func findBanishBinary() string {
 	return "banish"
 }
 
+// --- CLAUDE.md ---
+
 const claudeMDContent = `## Banish
 
-banish is installed. All bash commands routed through banish return enriched
-responses with structured JSON output and optimization hints.
+banish is installed. Bash commands are automatically routed through banish
+for output compaction and token savings.
 
-banish provides:
-- Structured JSON output (typed fields, not text to parse)
-- Token efficiency (compact keys, pagination, no banners)
-- Optimization hints (_hint fields suggesting shorter alternatives)
-- MCP tools for direct access (banish_run, banish_ls, etc.)
+What banish does:
+- Compacts command output (git status, log, diff, ls, find, grep, etc.)
+- Tracks token savings (run banish gain to see stats)
+- Provides MCP tools (banish_run, banish_ls, banish_read, banish_fetch)
+- Auto-exposes extension verbs as MCP tools
 
-### Response metadata
-
-- _hint: shorter alternative exists. Try the suggested form next time.
-- _suggest_extension: frequent command detected. Ask user for confirmation,
-  then create .bsh extension following the embedded guide.
-- _more/_total: output truncated, paginate for more.
+Extensions in ~/.banish/ext/ define:
+- Verb shortcuts (gs = git status --short, dps = docker ps compact, etc.)
+- Output filters (strip noise from git, npm, cargo, docker, kubectl, etc.)
 
 ### BANISH file
 
 If a BANISH file exists in the project root, read it for project-specific
-verbs and configuration.
+verbs and filters.
 `
 
 func writeClaudeMD(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		existing, _ := os.ReadFile(path)
 		if strings.Contains(string(existing), "## Banish") {
-			return nil // already has banish section
+			return nil
 		}
 		content := string(existing) + "\n" + claudeMDContent
 		return os.WriteFile(path, []byte(content), 0644)
@@ -142,16 +309,11 @@ func writeClaudeMD(path string) error {
 	return os.WriteFile(path, []byte(claudeMDContent), 0644)
 }
 
-const cursorRulesContent = `All bash commands are routed through banish. banish returns structured JSON
-output with optimization hints.
+// --- Cursor ---
 
-banish response metadata:
-- _hint: shorter alternative exists. Try the suggested form.
-- _suggest_extension: frequent command detected. Ask user, then create .bsh
-  extension following the embedded guide.
-- _more/_total: output truncated, paginate for more.
-
-Read the BANISH file in the project root for project-specific verbs.
+const cursorRulesContent = `Bash commands are routed through banish for output compaction and token savings.
+banish provides MCP tools and auto-exposes extension verbs.
+Read the BANISH file in the project root for project-specific verbs and filters.
 `
 
 func writeCursorRules(path string) error {
@@ -166,15 +328,17 @@ func writeCursorRules(path string) error {
 	return os.WriteFile(path, []byte(cursorRulesContent), 0644)
 }
 
+// --- Project detection ---
+
 func detectProjectType(dir string) string {
 	checks := map[string]string{
-		"go.mod":         "go",
-		"package.json":   "node",
-		"Cargo.toml":     "rust",
-		"pyproject.toml": "python",
+		"go.mod":           "go",
+		"package.json":     "node",
+		"Cargo.toml":       "rust",
+		"pyproject.toml":   "python",
 		"requirements.txt": "python",
-		"pom.xml":        "java",
-		"build.gradle":   "java",
+		"pom.xml":          "java",
+		"build.gradle":     "java",
 	}
 	for file, lang := range checks {
 		if _, err := os.Stat(filepath.Join(dir, file)); err == nil {

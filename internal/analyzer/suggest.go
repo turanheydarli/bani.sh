@@ -15,7 +15,7 @@ type ExtensionSuggestion struct {
 	Command   string         `json:"command"`
 	ArgsSeen  []string       `json:"args_seen"`
 	Frequency int            `json:"frequency"`
-	TokenCost int            `json:"token_cost"`
+	TokenCost int64          `json:"token_cost"`
 	ExtDir    string         `json:"ext_dir"`
 	Confirm   bool           `json:"confirm"`
 	Guide     ExtensionGuide `json:"guide"`
@@ -89,7 +89,7 @@ func (a *Analyzer) SuggestExtension(cmd string, builtins map[string]bool) *Exten
 	}
 
 	// Calculate total token cost
-	var totalCost int
+	var totalCost int64
 	var argsSeen []string
 	seen := make(map[string]bool)
 	for _, e := range a.entries {
@@ -107,7 +107,7 @@ func (a *Analyzer) SuggestExtension(cmd string, builtins map[string]bool) *Exten
 		}
 	}
 
-	if freq < CrossSessionThreshold && totalCost < SingleSessionTokenCost {
+	if freq < CrossSessionThreshold && totalCost < int64(SingleSessionTokenCost) {
 		return nil
 	}
 

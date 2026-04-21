@@ -41,28 +41,36 @@ func TestInitProjectAlreadyExists(t *testing.T) {
 }
 
 func TestInitClaudeCode(t *testing.T) {
+	// InitClaudeCode writes to ~/.claude/ and ~/.banish/ (global).
+	// We test that it completes without error and creates the hook.
 	dir := t.TempDir()
 
 	if err := InitClaudeCode(dir); err != nil {
 		t.Fatalf("InitClaudeCode error: %v", err)
 	}
 
-	// Check .mcp.json
-	data, _ := os.ReadFile(filepath.Join(dir, ".mcp.json"))
-	if !strings.Contains(string(data), "banish") {
-		t.Error(".mcp.json missing banish server")
+	home, _ := os.UserHomeDir()
+
+	// Check global CLAUDE.md
+	data, _ := os.ReadFile(filepath.Join(home, ".claude", "CLAUDE.md"))
+	if !strings.Contains(string(data), "## Banish") {
+		t.Error("~/.claude/CLAUDE.md missing banish section")
 	}
-	if !strings.Contains(string(data), "serve") {
-		t.Error(".mcp.json missing serve arg")
+	if !strings.Contains(string(data), "compaction") && !strings.Contains(string(data), "compacts") {
+		t.Error("~/.claude/CLAUDE.md missing compaction documentation")
 	}
 
-	// Check CLAUDE.md
-	data, _ = os.ReadFile(filepath.Join(dir, "CLAUDE.md"))
-	if !strings.Contains(string(data), "## Banish") {
-		t.Error("CLAUDE.md missing banish section")
+	// Check hook exists
+	hookPath := filepath.Join(home, ".claude", "hooks", "banish-hook.sh")
+	if _, err := os.Stat(hookPath); os.IsNotExist(err) {
+		t.Error("hook script not created")
 	}
-	if !strings.Contains(string(data), "_hint") {
-		t.Error("CLAUDE.md missing _hint documentation")
+
+	// Check extensions deployed
+	extDir := filepath.Join(home, ".banish", "ext")
+	entries, _ := os.ReadDir(extDir)
+	if len(entries) < 5 {
+		t.Errorf("expected at least 5 extensions, got %d", len(entries))
 	}
 }
 
@@ -72,7 +80,8 @@ func TestInitClaudeCodeIdempotent(t *testing.T) {
 	InitClaudeCode(dir)
 	InitClaudeCode(dir) // second call should not duplicate
 
-	data, _ := os.ReadFile(filepath.Join(dir, "CLAUDE.md"))
+	home, _ := os.UserHomeDir()
+	data, _ := os.ReadFile(filepath.Join(home, ".claude", "CLAUDE.md"))
 	count := strings.Count(string(data), "## Banish")
 	if count != 1 {
 		t.Errorf("CLAUDE.md has %d banish sections, want 1", count)

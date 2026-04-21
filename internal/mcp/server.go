@@ -144,7 +144,7 @@ func (s *Server) handleToolsCall(ctx context.Context, req *Request) *Response {
 
 func (s *Server) buildToolsList() []ToolDef {
 	// Core tools with examples in descriptions (for agent in-context learning).
-	return []ToolDef{
+	tools := []ToolDef{
 		{
 			Name:        "banish_run",
 			Description: "Execute a banish or bash command. Returns structured JSON.\n\nExamples:\n  ls /var/log ext:log\n  echo \"hello\" | count\n  find /tmp -name \"*.txt\"\n  @github issues repo:acme/api",
@@ -192,6 +192,40 @@ func (s *Server) buildToolsList() []ToolDef {
 			},
 		},
 	}
+
+	// Auto-expose extension verbs (from ~/.banish/ext/ and BANISH manifest)
+	// as MCP tools. Each verb becomes banish_<name> with a generic "args" input.
+	reg := s.interp.Registry()
+	for _, name := range reg.ExtensionNames() {
+		toolName := "banish_" + name
+		// Skip if it would collide with a core tool
+		exists := false
+		for _, t := range tools {
+			if t.Name == toolName {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue
+		}
+
+		tools = append(tools, ToolDef{
+			Name:        toolName,
+			Description: fmt.Sprintf("Run the '%s' verb (project/extension defined).", name),
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"args": map[string]string{
+						"type":        "string",
+						"description": "Arguments to pass to the verb",
+					},
+				},
+			},
+		})
+	}
+
+	return tools
 }
 
 func (s *Server) writeResponse(w io.Writer, resp *Response) {

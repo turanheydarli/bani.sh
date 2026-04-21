@@ -15,10 +15,12 @@ import (
 type Entry struct {
 	Timestamp  time.Time
 	Command    string
-	InputToks  int
-	OutputToks int
-	BashEquiv  int // estimated tokens if done in bash
-	Savings    int // BashEquiv - InputToks
+	InputToks  int64
+	OutputToks int64
+	RawToks    int64  // tokens before compaction
+	SavedToks  int64  // tokens saved by compaction
+	BashEquiv  int64  // estimated tokens if done in bash
+	Savings    int64  // BashEquiv - InputToks
 	Mode       string // "bsh" or "bash"
 	HintShown  bool
 }
@@ -26,17 +28,20 @@ type Entry struct {
 // Stats holds aggregate statistics.
 type Stats struct {
 	Commands       int        `json:"commands"`
-	InputSaved     int        `json:"input_saved"`
-	OutputSaved    int        `json:"output_saved"`
-	TotalSaved     int        `json:"total_saved"`
+	InputTokens    int64      `json:"input_tokens"`
+	OutputTokens   int64      `json:"output_tokens"`
+	RawTokens      int64      `json:"raw_tokens"`
+	SavedTokens    int64      `json:"saved_tokens"`
+	SavingsPct     float64    `json:"savings_pct"`
 	TopVerbs       []VerbStat `json:"top_verbs"`
 }
 
 // VerbStat tracks per-verb usage.
 type VerbStat struct {
-	Name  string `json:"name"`
-	Count int    `json:"count"`
-	Saved int    `json:"saved"`
+	Name     string  `json:"name"`
+	Count    int     `json:"count"`
+	Saved    int64   `json:"saved"`
+	AvgPct   float64 `json:"avg_pct"`
 }
 
 // Analyzer tracks command execution for token accounting.
@@ -86,23 +91,33 @@ func (a *Analyzer) SessionStats() *Stats {
 
 	for _, e := range a.entries {
 		s.Commands++
-		s.InputSaved += e.Savings
-		s.TotalSaved += e.Savings
+		s.InputTokens += e.InputToks
+		s.OutputTokens += e.OutputToks
+		s.RawTokens += e.RawToks
+		s.SavedTokens += e.SavedToks
 
-		vs, ok := verbMap[e.Command]
+		base := normalizeCmd(e.Command)
+		vs, ok := verbMap[base]
 		if !ok {
-			vs = &VerbStat{Name: e.Command}
-			verbMap[e.Command] = vs
+			vs = &VerbStat{Name: base}
+			verbMap[base] = vs
 		}
 		vs.Count++
-		vs.Saved += e.Savings
+		vs.Saved += e.SavedToks
+	}
+
+	if s.RawTokens > 0 {
+		s.SavingsPct = float64(s.SavedTokens) / float64(s.RawTokens) * 100
 	}
 
 	for _, vs := range verbMap {
+		if vs.Count > 0 && vs.Saved > 0 {
+			vs.AvgPct = float64(vs.Saved) / float64(vs.Count)
+		}
 		s.TopVerbs = append(s.TopVerbs, *vs)
 	}
 	sort.Slice(s.TopVerbs, func(i, j int) bool {
-		return s.TopVerbs[i].Count > s.TopVerbs[j].Count
+		return s.TopVerbs[i].Saved > s.TopVerbs[j].Saved
 	})
 	if len(s.TopVerbs) > 10 {
 		s.TopVerbs = s.TopVerbs[:10]
@@ -120,12 +135,12 @@ func (a *Analyzer) Frequency(cmd string) int {
 
 // FormatStats returns a compact string summary.
 func FormatStats(s *Stats) string {
-	return fmt.Sprintf("commands:%d saved:%d tokens", s.Commands, s.TotalSaved)
+	return fmt.Sprintf("commands:%d saved:%d tokens (%.1f%%)", s.Commands, s.SavedTokens, s.SavingsPct)
 }
 
 // EstimateTokens estimates token count from a string (~4 chars per token).
-func EstimateTokens(s string) int {
-	n := len(s) / 4
+func EstimateTokens(s string) int64 {
+	n := int64(len(s)) / 4
 	if n == 0 && len(s) > 0 {
 		n = 1
 	}

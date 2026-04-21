@@ -12,24 +12,24 @@ func TestTrackAndStats(t *testing.T) {
 		Timestamp: time.Now(),
 		Command:   "ls",
 		InputToks: 2,
-		BashEquiv: 8,
-		Savings:   6,
+		RawToks:   8,
+		SavedToks: 6,
 		Mode:      "bsh",
 	})
 	a.Track(Entry{
 		Timestamp: time.Now(),
 		Command:   "ls",
 		InputToks: 3,
-		BashEquiv: 10,
-		Savings:   7,
+		RawToks:   10,
+		SavedToks: 7,
 		Mode:      "bsh",
 	})
 	a.Track(Entry{
 		Timestamp: time.Now(),
 		Command:   "fetch",
 		InputToks: 4,
-		BashEquiv: 12,
-		Savings:   8,
+		RawToks:   12,
+		SavedToks: 8,
 		Mode:      "bsh",
 	})
 
@@ -38,13 +38,16 @@ func TestTrackAndStats(t *testing.T) {
 	if s.Commands != 3 {
 		t.Errorf("commands = %d, want 3", s.Commands)
 	}
-	if s.TotalSaved != 21 {
-		t.Errorf("total saved = %d, want 21", s.TotalSaved)
+	if s.SavedTokens != 21 {
+		t.Errorf("saved tokens = %d, want 21", s.SavedTokens)
+	}
+	if s.RawTokens != 30 {
+		t.Errorf("raw tokens = %d, want 30", s.RawTokens)
 	}
 	if len(s.TopVerbs) != 2 {
 		t.Fatalf("top verbs = %d, want 2", len(s.TopVerbs))
 	}
-	// ls should be first (2 uses vs 1)
+	// ls should be first (more savings)
 	if s.TopVerbs[0].Name != "ls" {
 		t.Errorf("top verb = %s, want ls", s.TopVerbs[0].Name)
 	}
@@ -73,7 +76,7 @@ func TestFrequency(t *testing.T) {
 func TestEstimateTokens(t *testing.T) {
 	tests := []struct {
 		input string
-		want  int
+		want  int64
 	}{
 		{"", 0},
 		{"ls", 1},
@@ -89,9 +92,9 @@ func TestEstimateTokens(t *testing.T) {
 }
 
 func TestFormatStats(t *testing.T) {
-	s := &Stats{Commands: 5, TotalSaved: 42}
+	s := &Stats{Commands: 5, SavedTokens: 42, SavingsPct: 33.3}
 	got := FormatStats(s)
-	want := "commands:5 saved:42 tokens"
+	want := "commands:5 saved:42 tokens (33.3%)"
 	if got != want {
 		t.Errorf("FormatStats = %q, want %q", got, want)
 	}
@@ -103,7 +106,7 @@ func TestEmptyStats(t *testing.T) {
 	if s.Commands != 0 {
 		t.Errorf("commands = %d, want 0", s.Commands)
 	}
-	if s.TotalSaved != 0 {
-		t.Errorf("saved = %d, want 0", s.TotalSaved)
+	if s.SavedTokens != 0 {
+		t.Errorf("saved = %d, want 0", s.SavedTokens)
 	}
 }

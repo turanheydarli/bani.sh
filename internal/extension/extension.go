@@ -25,11 +25,20 @@ type VerbDef struct {
 	Help   string
 }
 
+// FilterDef is an output filter defined in an extension file.
+// Filters compact command output by piping it through a shell script.
+type FilterDef struct {
+	Name    string // filter name (for logging)
+	Match   string // command pattern to match (substring or glob)
+	Compact string // shell command that receives raw output on stdin
+}
+
 // ExtensionMeta holds metadata from the !extension directive.
 type ExtensionMeta struct {
 	Name    string
 	Version string
 	Verbs   []VerbDef
+	Filters []FilterDef
 }
 
 // Loader reads and parses .bsh extension files.
@@ -101,15 +110,20 @@ func (l *Loader) LoadFile(path string) error {
 			if len(dir.Args) >= 1 {
 				verb.Name = dir.Args[0].String()
 			}
-			// Parse indented key:value pairs after !verb as sub-directives.
-			// In the current grammar, these come as subsequent directives.
 			ext.Verbs = append(ext.Verbs, verb)
+
+		case "filter":
+			filter := FilterDef{}
+			if len(dir.Args) >= 1 {
+				filter.Name = dir.Args[0].String()
+			}
+			ext.Filters = append(ext.Filters, filter)
 		}
 	}
 
-	// Second pass: find expand/args/help for each verb by scanning all statements
-	// looking for assignments or directives that follow !verb.
+	// Second pass: find expand/args/help for each verb, and match/compact for each filter.
 	parseVerbDetails(prog, &ext)
+	parseFilterDetails(prog, &ext)
 
 	l.extensions = append(l.extensions, ext)
 	return nil
@@ -169,6 +183,58 @@ func makeExtensionHandler(v VerbDef) interpreter.VerbHandler {
 
 		return interpreter.NewResult(strings.TrimRight(string(out), "\n")), nil
 	}
+}
+
+// parseFilterDetails extracts match and compact from statements following !filter.
+func parseFilterDetails(prog *ast.Program, ext *ExtensionMeta) {
+	if len(ext.Filters) == 0 {
+		return
+	}
+
+	currentFilter := -1
+	for _, stmt := range prog.Statements {
+		dir, ok := stmt.(*ast.Directive)
+		if !ok {
+			continue
+		}
+
+		switch dir.Name {
+		case "filter":
+			currentFilter++
+		case "verb", "extension":
+			// These break filter context
+			currentFilter = -1
+		default:
+			if currentFilter >= 0 && currentFilter < len(ext.Filters) {
+				var parts []string
+				for _, arg := range dir.Args {
+					// Use raw value for string literals (strip quotes)
+					if sl, ok := arg.(*ast.StringLiteral); ok {
+						parts = append(parts, sl.Value)
+					} else {
+						parts = append(parts, arg.String())
+					}
+				}
+				val := strings.Join(parts, " ")
+
+				switch dir.Name {
+				case "match":
+					ext.Filters[currentFilter].Match = val
+				case "compact":
+					ext.Filters[currentFilter].Compact = val
+				}
+			}
+		}
+	}
+}
+
+// Filters returns all loaded filter definitions across all extensions.
+func (l *Loader) Filters() []FilterDef {
+	var all []FilterDef
+	for _, ext := range l.extensions {
+		all = append(all, ext.Filters...)
+	}
+	return all
 }
 
 // parseVerbDetails extracts expand, args, help from statements following !verb.
