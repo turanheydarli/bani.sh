@@ -4,6 +4,9 @@
 !verb build
 !expand exec go build -ldflags "-X main.version=dev" -o bin/banish ./cmd/banish
 
+!verb install
+!expand exec go install -ldflags "-X main.version=dev" ./cmd/banish
+
 !verb clean
 !expand exec rm -rf bin/
 

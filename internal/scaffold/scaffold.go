@@ -49,8 +49,7 @@ func InitClaudeCode(dir string) error {
 	}
 
 	// 4. Create global MCP config at ~/.claude/.mcp.json
-	globalMCP := filepath.Join(home, ".claude", ".mcp.json")
-	if err := writeMCPConfig(globalMCP); err != nil {
+	if err := writeMCPConfig(globalMCPPath(home)); err != nil {
 		return fmt.Errorf("global MCP config: %w", err)
 	}
 
@@ -164,48 +163,132 @@ func installHook(home string) error {
 }
 
 func registerHook(home string) error {
-	settingsPath := filepath.Join(home, ".claude", "settings.json")
-	hookPath := filepath.Join(home, ".claude", "hooks", "banish-hook.sh")
+	settings, err := loadClaudeSettings(home)
+	if err != nil {
+		return err
+	}
 
-	var settings map[string]any
+	// Remove any existing banish hooks, then add the current one.
+	stripBanishHook(settings)
+	addBanishHook(settings, claudeHookPath(home))
 
-	if data, err := os.ReadFile(settingsPath); err == nil {
-		json.Unmarshal(data, &settings)
+	return saveClaudeSettings(home, settings)
+}
+
+// claudeHookPath is the canonical location of the banish PreToolUse hook script.
+func claudeHookPath(home string) string {
+	return filepath.Join(home, ".claude", "hooks", "banish-hook.sh")
+}
+
+// claudeSettingsPath is the Claude Code settings file that registers hooks.
+func claudeSettingsPath(home string) string {
+	return filepath.Join(home, ".claude", "settings.json")
+}
+
+// globalMCPPath is the global Claude Code MCP server config.
+func globalMCPPath(home string) string {
+	return filepath.Join(home, ".claude", ".mcp.json")
+}
+
+// loadClaudeSettings reads ~/.claude/settings.json into a map. A missing file
+// yields an empty (non-nil) map so callers can add keys unconditionally.
+func loadClaudeSettings(home string) (map[string]any, error) {
+	settings := make(map[string]any)
+	data, err := os.ReadFile(claudeSettingsPath(home))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return settings, nil
+		}
+		return nil, fmt.Errorf("scaffold.loadClaudeSettings: %w", err)
+	}
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return nil, fmt.Errorf("scaffold.loadClaudeSettings: parse settings.json: %w", err)
 	}
 	if settings == nil {
 		settings = make(map[string]any)
 	}
+	return settings, nil
+}
 
-	// Remove any existing banish hooks, then add the current one.
+// saveClaudeSettings writes settings back to ~/.claude/settings.json.
+func saveClaudeSettings(home string, settings map[string]any) error {
+	dir := filepath.Join(home, ".claude")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("scaffold.saveClaudeSettings: %w", err)
+	}
+	out, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return fmt.Errorf("scaffold.saveClaudeSettings: %w", err)
+	}
+	return os.WriteFile(claudeSettingsPath(home), append(out, '\n'), 0644)
+}
+
+// isBanishHookEntry reports whether a PreToolUse entry runs the banish hook.
+func isBanishHookEntry(entry any) bool {
+	m, ok := entry.(map[string]any)
+	if !ok {
+		return false
+	}
+	inner, ok := m["hooks"].([]any)
+	if !ok {
+		return false
+	}
+	for _, h := range inner {
+		hm, ok := h.(map[string]any)
+		if !ok {
+			continue
+		}
+		if cmd, ok := hm["command"].(string); ok && strings.Contains(cmd, "banish") {
+			return true
+		}
+	}
+	return false
+}
+
+// stripBanishHook removes every banish PreToolUse entry, leaving all other
+// hooks intact. Empty containers are pruned so settings stays clean. Returns
+// true if any banish entry was removed.
+func stripBanishHook(settings map[string]any) bool {
+	hooks, _ := settings["hooks"].(map[string]any)
+	if hooks == nil {
+		return false
+	}
+	pre, _ := hooks["PreToolUse"].([]any)
+	if len(pre) == 0 {
+		return false
+	}
+
+	var filtered []any
+	removed := false
+	for _, entry := range pre {
+		if isBanishHookEntry(entry) {
+			removed = true
+			continue
+		}
+		filtered = append(filtered, entry)
+	}
+
+	if len(filtered) == 0 {
+		delete(hooks, "PreToolUse")
+	} else {
+		hooks["PreToolUse"] = filtered
+	}
+	if len(hooks) == 0 {
+		delete(settings, "hooks")
+	} else {
+		settings["hooks"] = hooks
+	}
+	return removed
+}
+
+// addBanishHook appends the banish PreToolUse entry, preserving existing hooks.
+func addBanishHook(settings map[string]any, hookPath string) {
 	hooks, _ := settings["hooks"].(map[string]any)
 	if hooks == nil {
 		hooks = make(map[string]any)
 	}
-
 	pre, _ := hooks["PreToolUse"].([]any)
-	var filtered []any
-	for _, entry := range pre {
-		isBanish := false
-		if m, ok := entry.(map[string]any); ok {
-			if innerHooks, ok := m["hooks"].([]any); ok {
-				for _, h := range innerHooks {
-					if hm, ok := h.(map[string]any); ok {
-						if cmd, ok := hm["command"].(string); ok {
-							if strings.Contains(cmd, "banish") {
-								isBanish = true
-							}
-						}
-					}
-				}
-			}
-		}
-		if !isBanish {
-			filtered = append(filtered, entry)
-		}
-	}
-
-	// Add current hook
-	filtered = append(filtered, map[string]any{
+	pre = append(pre, map[string]any{
 		"matcher": "Bash",
 		"hooks": []any{
 			map[string]any{
@@ -215,11 +298,23 @@ func registerHook(home string) error {
 			},
 		},
 	})
-	hooks["PreToolUse"] = filtered
+	hooks["PreToolUse"] = pre
 	settings["hooks"] = hooks
+}
 
-	out, _ := json.MarshalIndent(settings, "", "  ")
-	return os.WriteFile(settingsPath, append(out, '\n'), 0644)
+// hasBanishHook reports whether a banish PreToolUse entry is registered.
+func hasBanishHook(settings map[string]any) bool {
+	hooks, _ := settings["hooks"].(map[string]any)
+	if hooks == nil {
+		return false
+	}
+	pre, _ := hooks["PreToolUse"].([]any)
+	for _, entry := range pre {
+		if isBanishHookEntry(entry) {
+			return true
+		}
+	}
+	return false
 }
 
 // --- MCP config ---
