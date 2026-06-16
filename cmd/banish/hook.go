@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -76,8 +78,50 @@ func decideHook(cmd string, host permissions.Host) string {
 	decision := "ask"
 	if verdict == permissions.Allow {
 		decision = "allow"
+		appendAuditAllow(host, cmd)
 	}
 	return hookOutput(decision, wrapCommand(cmd))
+}
+
+// appendAuditAllow records an auto-approved command so you can review exactly
+// what banish let run without prompting you. Best-effort: it never fails the
+// hook, and only auto-allows are recorded (ask/deferred commands already involve
+// you or the host).
+func appendAuditAllow(host permissions.Host, cmd string) {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return
+	}
+	dir := filepath.Join(home, ".banish")
+	if os.MkdirAll(dir, 0755) != nil {
+		return
+	}
+	f, err := os.OpenFile(filepath.Join(dir, "hook-audit.jsonl"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	entry := struct {
+		TS      string `json:"ts"`
+		Host    string `json:"host"`
+		Command string `json:"command"`
+	}{
+		TS:      time.Now().UTC().Format(time.RFC3339),
+		Host:    hostName(host),
+		Command: cmd,
+	}
+	if b, err := json.Marshal(entry); err == nil {
+		f.Write(append(b, '\n'))
+	}
+}
+
+// hostName is the stable string label for a host, used in the audit log.
+func hostName(h permissions.Host) string {
+	if h == permissions.HostCursor {
+		return "cursor"
+	}
+	return "claude-code"
 }
 
 // shouldSkipHook reports commands banish should not wrap: already-banish calls,
