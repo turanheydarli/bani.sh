@@ -118,38 +118,16 @@ func deployExtensions(home string) (int, error) {
 // --- Hook installation ---
 
 const hookScript = `#!/bin/bash
-# banish-hook.sh -- Route bash commands through banish for output compaction.
+# banish-hook.sh -- Route Bash commands through banish for output compaction.
 # Installed by: banish init claude-code
+#
+# All decision logic lives in 'banish hook': it reads the tool input on stdin,
+# checks the command against your Claude Code permission rules, and only
+# auto-approves what those rules already allow. Anything else is left for Claude
+# Code to prompt you on, exactly as it would without banish.
 
-if ! command -v jq &>/dev/null; then exit 0; fi
-if ! command -v banish &>/dev/null; then exit 0; fi
-
-INPUT=$(cat)
-CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
-
-[ -z "$CMD" ] && exit 0
-
-# Skip: already banish, shell builtins, multi-line scripts, heredocs
-case "$CMD" in
-  banish*) exit 0 ;;
-  cd\ *|export\ *|source\ *|alias\ *|eval\ *) exit 0 ;;
-  *$'\n'*) exit 0 ;;
-  *"<<"*) exit 0 ;;
-  *EOF*) exit 0 ;;
-esac
-
-# Wrap: banish "original command"
-# Use printf to avoid quote escaping issues
-WRAPPED=$(printf 'banish "%s"' "$(echo "$CMD" | sed 's/"/\\"/g')")
-
-echo "$INPUT" | jq -c --arg cmd "$WRAPPED" '{
-  hookSpecificOutput: {
-    hookEventName: "PreToolUse",
-    permissionDecision: "allow",
-    permissionDecisionReason: "banish output compaction",
-    updatedInput: { command: $cmd }
-  }
-}'
+command -v banish >/dev/null 2>&1 || exit 0
+exec banish hook
 `
 
 func installHook(home string) error {
