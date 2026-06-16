@@ -17,7 +17,8 @@ import (
 // JSON to stdout. It never auto-approves a command the host's own rules do not
 // already allow.
 func hookCmd() *cobra.Command {
-	return &cobra.Command{
+	var host string
+	cmd := &cobra.Command{
 		Use:    "hook",
 		Short:  "PreToolUse hook: permission-aware Bash routing through banish",
 		Hidden: true,
@@ -35,23 +36,33 @@ func hookCmd() *cobra.Command {
 			if json.Unmarshal(data, &in) != nil {
 				return nil
 			}
-			if out := decideHook(in.ToolInput.Command); out != "" {
+			if out := decideHook(in.ToolInput.Command, hostFromString(host)); out != "" {
 				fmt.Println(out)
 			}
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&host, "host", "claude-code", "agent host whose permission rules apply: claude-code or cursor")
+	return cmd
+}
+
+// hostFromString maps a host flag value to a permissions.Host.
+func hostFromString(s string) permissions.Host {
+	if s == "cursor" {
+		return permissions.HostCursor
+	}
+	return permissions.HostClaudeCode
 }
 
 // decideHook returns the hook output JSON for a command, or "" to defer to the
 // host's normal permission flow (which leaves the original command untouched).
-func decideHook(cmd string) string {
+func decideHook(cmd string, host permissions.Host) string {
 	trimmed := strings.TrimSpace(cmd)
 	if trimmed == "" || shouldSkipHook(trimmed) {
 		return ""
 	}
 
-	verdict := permissions.Check(trimmed)
+	verdict := permissions.CheckFor(trimmed, host)
 
 	// Deny: let the host apply its own deny handling on the original command.
 	if verdict == permissions.Deny {

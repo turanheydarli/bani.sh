@@ -28,9 +28,25 @@ const (
 	Default Verdict = "default"
 )
 
-// Check loads the host's Bash rules from its settings files and evaluates cmd.
+// Host is an agent host whose own permission rules banish consults.
+type Host int
+
+const (
+	// HostClaudeCode reads Bash(...) rules from the .claude settings files.
+	HostClaudeCode Host = iota
+	// HostCursor reads Shell(...) rules from ~/.cursor/cli-config.json.
+	HostCursor
+)
+
+// Check evaluates cmd against the Claude Code rules. It is shorthand for
+// CheckFor(cmd, HostClaudeCode).
 func Check(cmd string) Verdict {
-	deny, ask, allow := loadRules()
+	return CheckFor(cmd, HostClaudeCode)
+}
+
+// CheckFor evaluates cmd against the given host's permission rules.
+func CheckFor(cmd string, host Host) Verdict {
+	deny, ask, allow := loadRulesFor(host)
 	return CheckWithRules(cmd, deny, ask, allow)
 }
 
@@ -294,8 +310,8 @@ func commandMatchesPattern(cmd, pattern string) bool {
 		return true
 	}
 
-	if strings.HasSuffix(pattern, "*") {
-		prefix := strings.TrimRight(strings.TrimSuffix(pattern, "*"), ":")
+	if p, ok := strings.CutSuffix(pattern, "*"); ok {
+		prefix := strings.TrimRight(p, ":")
 		prefix = strings.TrimRight(prefix, " \t")
 		if prefix == "" || prefix == "*" {
 			return true
@@ -365,10 +381,21 @@ func globMatches(cmd, pattern string) bool {
 	return true
 }
 
-// loadRules reads Bash deny/ask/allow patterns from the host settings files,
-// in order: project .claude/settings.json and settings.local.json, then the
-// user's ~/.claude equivalents. Missing or malformed files are skipped.
-func loadRules() (deny, ask, allow []string) {
+// loadRulesFor returns the deny/ask/allow rule sets for a host.
+func loadRulesFor(host Host) (deny, ask, allow []string) {
+	switch host {
+	case HostCursor:
+		return loadCursorRules()
+	default:
+		return loadClaudeRules()
+	}
+}
+
+// loadClaudeRules reads Bash deny/ask/allow patterns from the Claude Code
+// settings files, in order: project .claude/settings.json and
+// settings.local.json, then the user's ~/.claude equivalents. Missing or
+// malformed files are skipped.
+func loadClaudeRules() (deny, ask, allow []string) {
 	for _, path := range settingsPaths() {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -384,19 +411,52 @@ func loadRules() (deny, ask, allow []string) {
 		if json.Unmarshal(data, &cfg) != nil {
 			continue
 		}
-		deny = append(deny, extractBashRules(cfg.Permissions.Deny)...)
-		ask = append(ask, extractBashRules(cfg.Permissions.Ask)...)
-		allow = append(allow, extractBashRules(cfg.Permissions.Allow)...)
+		deny = append(deny, extractWrappedRules(cfg.Permissions.Deny, "Bash(")...)
+		ask = append(ask, extractWrappedRules(cfg.Permissions.Ask, "Bash(")...)
+		allow = append(allow, extractWrappedRules(cfg.Permissions.Allow, "Bash(")...)
 	}
 	return deny, ask, allow
 }
 
-// extractBashRules keeps only Bash(...) patterns, returning the inner pattern.
-func extractBashRules(rules []string) []string {
+// loadCursorRules reads Shell deny/allow patterns from the global Cursor CLI
+// config (~/.cursor/cli-config.json). Cursor has no ask tier. A bare "Shell"
+// rule (no parentheses) means everything. Only the global config is read, so
+// banish is never more permissive than Cursor's own project trust allows.
+func loadCursorRules() (deny, ask, allow []string) {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return nil, nil, nil
+	}
+	data, err := os.ReadFile(filepath.Join(home, ".cursor", "cli-config.json"))
+	if err != nil {
+		return nil, nil, nil
+	}
+	var cfg struct {
+		Permissions struct {
+			Deny  []string `json:"deny"`
+			Allow []string `json:"allow"`
+		} `json:"permissions"`
+	}
+	if json.Unmarshal(data, &cfg) != nil {
+		return nil, nil, nil
+	}
+	deny = extractWrappedRules(cfg.Permissions.Deny, "Shell(")
+	allow = extractWrappedRules(cfg.Permissions.Allow, "Shell(")
+	return deny, nil, allow
+}
+
+// extractWrappedRules keeps only rules wrapped in the given prefix (for example
+// "Bash(" or "Shell(") and returns the inner pattern. A bare prefix word with no
+// parentheses (for example "Shell") matches everything.
+func extractWrappedRules(rules []string, prefix string) []string {
+	bare := strings.TrimSuffix(prefix, "(")
 	var out []string
 	for _, r := range rules {
-		if strings.HasPrefix(r, "Bash(") && strings.HasSuffix(r, ")") {
-			out = append(out, r[len("Bash("):len(r)-1])
+		switch {
+		case r == bare:
+			out = append(out, "*")
+		case strings.HasPrefix(r, prefix) && strings.HasSuffix(r, ")"):
+			out = append(out, r[len(prefix):len(r)-1])
 		}
 	}
 	return out

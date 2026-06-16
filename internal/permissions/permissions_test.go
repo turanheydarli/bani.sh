@@ -159,10 +159,17 @@ func TestHiddenCommandNotAutoAllowed(t *testing.T) {
 	}
 }
 
-func TestExtractBashRules(t *testing.T) {
+func TestExtractWrappedRules(t *testing.T) {
 	in := []string{"Bash(git status)", "Read(src/**)", "Bash(npm test)", "WebFetch(x)"}
-	out := extractBashRules(in)
+	out := extractWrappedRules(in, "Bash(")
 	if len(out) != 2 || out[0] != "git status" || out[1] != "npm test" {
-		t.Errorf("extractBashRules = %v, want [git status npm test]", out)
+		t.Errorf("extractWrappedRules(Bash) = %v, want [git status npm test]", out)
+	}
+
+	// Cursor uses Shell(...); a bare "Shell" means everything.
+	cur := []string{"Shell(git status)", "Read(x)", "Shell", "Shell(curl:*)"}
+	got := extractWrappedRules(cur, "Shell(")
+	if len(got) != 3 || got[0] != "git status" || got[1] != "*" || got[2] != "curl:*" {
+		t.Errorf("extractWrappedRules(Shell) = %v, want [git status * curl:*]", got)
 	}
 }
