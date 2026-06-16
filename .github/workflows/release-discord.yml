@@ -25,12 +25,14 @@ jobs:
           set -euo pipefail
           prev=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
 
-          # GoReleaser creates the GitHub Release on the same tag push; wait for it.
-          for _ in $(seq 1 24); do
-            if gh release view "$TAG" >/dev/null 2>&1; then break; fi
+          # GoReleaser creates the GitHub Release on the same tag push, then
+          # fills in the body. Wait for a non-empty body (up to ~3 min).
+          notes=""
+          for _ in $(seq 1 36); do
+            notes=$(gh release view "$TAG" --json body --jq .body 2>/dev/null || true)
+            if [ -n "$notes" ]; then break; fi
             sleep 5
           done
-          notes=$(gh release view "$TAG" --json body --jq .body 2>/dev/null || true)
 
           if [ -n "$prev" ]; then range="${prev}..${TAG}"; else range="$TAG"; fi
           strip='s/^[[:space:]]*[0-9]+[[:space:]]+//; s/ <.*$//'

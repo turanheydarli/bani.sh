@@ -132,7 +132,13 @@ def main():
     request = urllib.request.Request(
         webhook,
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            # Discord is behind Cloudflare, which 403s the default Python-urllib
+            # User-Agent (error 1010). A descriptive UA is also required by the
+            # Discord API.
+            "User-Agent": "banish-release-bot (https://github.com/turanheydarli/bani.sh, 1.0)",
+        },
         method="POST",
     )
     try:
