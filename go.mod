@@ -1,6 +1,6 @@
 module go.bani.sh/banish
 
-go 1.26.1
+go 1.26.4
 
 require github.com/spf13/cobra v1.10.2
 
