@@ -21,6 +21,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           prev=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
@@ -34,15 +35,34 @@ jobs:
             sleep 5
           done
 
-          if [ -n "$prev" ]; then range="${prev}..${TAG}"; else range="$TAG"; fi
+          # Contributors as GitHub @handles where the commits are linked to an
+          # account; fall back to git author names if the API yields nothing.
           strip='s/^[[:space:]]*[0-9]+[[:space:]]+//; s/ <.*$//'
-          contributors=$(git shortlog -sne "$range" | sed -E "$strip" | sort -u)
           if [ -n "$prev" ]; then
-            prior=$(git shortlog -sne "$prev" | sed -E "$strip" | sort -u)
+            range="${prev}..${TAG}"; base="$prev"
           else
-            prior=""
+            range="$TAG"; base=$(git rev-list --max-parents=0 "$TAG" | tail -1)
           fi
-          first=$(comm -23 <(printf '%s\n' "$contributors") <(printf '%s\n' "$prior") || true)
+          names=$(git shortlog -sne "$range" | sed -E "$strip" | sort -u)
+          logins=$(gh api "repos/${REPO}/compare/${base}...${TAG}" --paginate \
+                     --jq '.commits[].author.login // empty' 2>/dev/null | sort -u || true)
+          if [ -n "$logins" ]; then
+            contributors=$(printf '%s\n' "$logins" | sed 's/^/@/')
+          else
+            contributors="$names"
+          fi
+
+          # First-timers: contributors with no commits before this release.
+          if [ -z "$prev" ]; then
+            first="$contributors"
+          elif [ -n "$logins" ]; then
+            prior=$(gh api "repos/${REPO}/commits?sha=${prev}&per_page=100" --paginate \
+                      --jq '.[].author.login // empty' 2>/dev/null | sort -u || true)
+            first=$(comm -23 <(printf '%s\n' "$logins") <(printf '%s\n' "$prior") | sed 's/^/@/' || true)
+          else
+            prior=$(git shortlog -sne "$prev" | sed -E "$strip" | sort -u)
+            first=$(comm -23 <(printf '%s\n' "$names") <(printf '%s\n' "$prior") || true)
+          fi
 
           d="EOF_$(date +%s%N)"
           {

@@ -54,7 +54,7 @@ def build_payload():
     # Title: "vX.Y.Z - the <theme> release" when the notes carry a Theme: line.
     theme_match = re.search(r"(?im)^\s*Theme:\s*(.+)$", notes)
     if theme_match:
-        title = "{} - the {} release".format(tag, theme_match.group(1).strip())
+        title = "{} \u2014 the {} release".format(tag, theme_match.group(1).strip())
     else:
         title = tag
 
@@ -66,7 +66,7 @@ def build_payload():
             number = re.sub(r"(?i)^savings:\s*", "", line).strip()
             break
     if number:
-        desc = number
+        desc = re.sub(r"(\d+%)", r"**\1**", number)
     else:
         paragraphs = [p.strip() for p in notes.split("\n\n") if p.strip()]
         desc = paragraphs[0] if paragraphs else "{} is out.".format(tag)
@@ -92,7 +92,9 @@ def build_payload():
         value = ", ".join(contributors)
         welcomed = [c for c in contributors if c in first_timers]
         if welcomed:
-            value += "\n\nFirst contribution from " + ", ".join(welcomed) + " - welcome aboard."
+            count = len(welcomed)
+            noun = "contributor" if count == 1 else "contributors"
+            value += " \u2014 {} first-time {} \U0001F389".format(count, noun)
         fields.append({"name": "Shipped by", "value": value})
 
     # Links (zero-width field name keeps the row clean). Install points at the
@@ -114,7 +116,7 @@ def build_payload():
         "description": desc,
         "fields": fields,
         "thumbnail": {"url": asset("mascot-ghost.png")},
-        "footer": {"text": "banish | MIT | bani.sh", "icon_url": asset("favicon.png")},
+        "footer": {"text": "banish \u00b7 MIT \u00b7 bani.sh", "icon_url": asset("favicon.png")},
     }
 
     payload = {
