@@ -17,6 +17,7 @@
 <p align="center">
   <a href="https://github.com/turanheydarli/bani.sh/stargazers"><img src="https://img.shields.io/github/stars/turanheydarli/bani.sh?style=flat&logo=github&color=2da44e&labelColor=1f2328" alt="stars" /></a>
   <a href="https://github.com/turanheydarli/bani.sh/graphs/contributors"><img src="https://img.shields.io/github/contributors/turanheydarli/bani.sh?style=flat&color=2da44e&labelColor=1f2328" alt="contributors" /></a>
+  <a href="https://github.com/turanheydarli/bani.sh/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/turanheydarli/bani.sh/ci.yml?branch=main&style=flat&color=2da44e&labelColor=1f2328&label=build" alt="build" /></a>
   <a href="https://github.com/turanheydarli/bani.sh/releases"><img src="https://img.shields.io/github/v/release/turanheydarli/bani.sh?style=flat&color=57606a&labelColor=1f2328" alt="release" /></a>
   <img src="https://img.shields.io/github/license/turanheydarli/bani.sh?style=flat&color=57606a&labelColor=1f2328" alt="license" />
   <a href="https://github.com/turanheydarli/bani.sh/labels/good%20first%20issue"><img src="https://img.shields.io/github/issues/turanheydarli/bani.sh/good%20first%20issue?style=flat&color=bf8700&labelColor=1f2328&label=good%20first%20issue" alt="good first issue" /></a>
