@@ -1,6 +1,6 @@
 # Contributing to banish
 
-Welcome -- we're glad you're here, and no contribution is too small. A typo fix,
+Welcome - we're glad you're here, and no contribution is too small. A typo fix,
 a sharper filter, a better error message: all of it counts.
 
 ## Good first issues
@@ -31,7 +31,7 @@ If you'd rather call Go directly: `go test -race -count=1 ./...` and `go vet ./.
 
 ## Make your change
 
-The most common first change is a new output filter -- about ten lines of `.bsh`.
+The most common first change is a new output filter - about ten lines of `.bsh`.
 A filter matches a command and pipes its raw output through a shell one-liner that
 strips the noise:
 
@@ -43,7 +43,7 @@ strips the noise:
 
 `!match` is a substring match against the command; `!compact` receives raw stdout
 on stdin and writes the compact version to stdout. The built-in filters live in
-[internal/scaffold/extensions.go](internal/scaffold/extensions.go) -- add yours
+[internal/scaffold/extensions.go](internal/scaffold/extensions.go) - add yours
 there, then `go install` and try it with `banish "docker build ."`. Keep the
 one-liner simple: reach for `grep`, `sed`, `head`, `tail`, `cut`, and `awk` before
 anything heavier. If a filter fails, banish returns the raw output, so a partial
@@ -53,8 +53,8 @@ contribution never breaks anyone.
 
 Branch off `main` with a short, descriptive name (`filter-docker-build`,
 `fix-git-status-empty`). A good PR description says what it changes and shows a
-quick before/after token count if you have one. Don't worry about a perfect diff
--- maintainers will help shape it. The goal is the merge, not a flawless first try.
+quick before/after token count if you have one. Don't worry about a perfect diff - maintainers
+will help shape it. The goal is the merge, not a flawless first try.
 
 ## Recognition
 

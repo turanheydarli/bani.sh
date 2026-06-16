@@ -20,8 +20,8 @@
 ## The number
 
 banish compacts shell command output before it reaches the model. Your agent runs
-the same commands all day -- `git status`, `npm install`, `cargo build`,
-`kubectl get` -- and most of that output is noise the model never needs. banish
+the same commands all day - `git status`, `npm install`, `cargo build`,
+`kubectl get` - and most of that output is noise the model never needs. banish
 runs the real command, strips the noise, and returns a compact version: `git status`
 drops from 176 tokens to 12, a 93% cut. Run `banish gain` any time to see your own
 running total.
@@ -68,7 +68,7 @@ main
 ```
 
 banish only auto-approves commands your Claude Code permission rules already
-allow. Anything that changes state -- `git commit`, `git push`, `rm` -- still
+allow. Anything that changes state - `git commit`, `git push`, `rm` - still
 prompts you, exactly as it would without banish.
 
 ## Supported
@@ -85,12 +85,12 @@ Measured savings on common commands:
 | `cargo build` (success) | ~150 tok | `cargo build: ok` (4 tok) | 97% |
 
 Ships with filters for git, docker, kubectl, npm/yarn/pnpm, cargo, maven, gradle,
-pytest, terraform, and aws. Add your own with a `.bsh` file -- no recompile.
+pytest, terraform, and aws. Add your own with a `.bsh` file - no recompile.
 
 ## Contributing
 
 New here? The [good first issues](https://github.com/turanheydarli/bani.sh/labels/good%20first%20issue)
-are scoped for a first PR -- a new filter is about ten lines. Pick one and we'll
+are scoped for a first PR - a new filter is about ten lines. Pick one and we'll
 help you land it. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
