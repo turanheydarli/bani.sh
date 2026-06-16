@@ -5,7 +5,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg" />
-    <img src="assets/wordmark-light.svg" width="150" alt="banish" />
+    <img src="assets/wordmark-light.svg" width="172" alt="bani.sh" />
   </picture>
 </p>
 
