@@ -58,23 +58,58 @@ func New(opts ...Option) *Interpreter {
 // EvalSource detects whether input is .bsh or bash, then executes accordingly.
 // This is the dual input mode entry point.
 func (interp *Interpreter) EvalSource(source string) (*Result, error) {
-	mode := Detect(source)
-
-	if mode == ModeBash {
-		// Route directly to system fallback via shell execution.
-		handler, err := interp.registry.Resolve("__fallback__")
-		if err != nil {
-			// No fallback registered, try to parse as .bsh anyway.
-			return interp.evalBSH(source)
-		}
-		cmd := &ast.Command{
-			Verb:   &ast.Identifier{Value: "__shell__"},
-			Target: &ast.StringLiteral{Value: source},
-		}
-		return handler(interp.ctx, cmd, nil)
+	if Detect(source) == ModeBash {
+		return interp.evalShell(source)
 	}
 
-	return interp.evalBSH(source)
+	// Detected as .bsh syntactically, but a single bare command whose verb is
+	// not a registered .bsh verb is really a plain shell command. Executing it
+	// through the .bsh command grammar would drop positional arguments (the
+	// grammar keeps only verb + one target + key:value modifiers), so run the
+	// original string verbatim through the shell instead. This is what makes
+	// commands like `go test ./internal/scaffold/` keep their path.
+	l := lexer.New(source)
+	p := parser.New(l)
+	prog := p.ParseProgram()
+	if len(p.Errors()) > 0 {
+		// Not valid .bsh after all; run verbatim through the shell.
+		return interp.evalShell(source)
+	}
+	if interp.isPlainShellCommand(prog) {
+		return interp.evalShell(source)
+	}
+
+	return interp.Eval(prog)
+}
+
+// evalShell runs the original command string verbatim through the system
+// fallback's shell executor, preserving every argument exactly. It falls back
+// to .bsh evaluation only when no fallback handler is registered.
+func (interp *Interpreter) evalShell(source string) (*Result, error) {
+	handler, err := interp.registry.Resolve("__fallback__")
+	if err != nil {
+		return interp.evalBSH(source)
+	}
+	cmd := &ast.Command{
+		Verb:   &ast.Identifier{Value: "__shell__"},
+		Target: &ast.StringLiteral{Value: source},
+	}
+	return handler(interp.ctx, cmd, nil)
+}
+
+// isPlainShellCommand reports whether prog is a single bare command whose verb
+// is not a registered .bsh verb -- i.e. a shell command that would only reach
+// the system fallback, where the lossy verb+target grammar drops arguments.
+func (interp *Interpreter) isPlainShellCommand(prog *ast.Program) bool {
+	if len(prog.Statements) != 1 {
+		return false
+	}
+	cmd, ok := prog.Statements[0].(*ast.Command)
+	if !ok {
+		return false
+	}
+	name := interp.verbName(cmd)
+	return name != "" && name != "__shell__" && !interp.registry.Has(name)
 }
 
 func (interp *Interpreter) evalBSH(source string) (*Result, error) {

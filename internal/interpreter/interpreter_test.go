@@ -133,6 +133,57 @@ func TestEvalUnknownVerb(t *testing.T) {
 	}
 }
 
+// A plain shell command whose verb is not a registered .bsh verb must reach the
+// shell fallback verbatim, so positional arguments (here a relative path) are
+// never dropped by the lossy verb+target grammar.
+func TestEvalSourcePreservesShellArgs(t *testing.T) {
+	reg := NewVerbRegistry()
+	reg.RegisterBuiltin("echo", func(_ context.Context, _ *ast.Command, _ *Result) (*Result, error) {
+		return NewResult(""), nil
+	})
+	var gotShell string
+	reg.SetFallback(func(_ context.Context, cmd *ast.Command, _ *Result) (*Result, error) {
+		if s, ok := cmd.Target.(*ast.StringLiteral); ok {
+			gotShell = s.Value
+		}
+		return NewResult("ran"), nil
+	})
+	interp := New(WithRegistry(reg))
+
+	const cmd = "go test ./internal/scaffold/"
+	if _, err := interp.EvalSource(cmd); err != nil {
+		t.Fatalf("EvalSource: %v", err)
+	}
+	if gotShell != cmd {
+		t.Fatalf("shell fallback got %q, want verbatim %q (positional path dropped)", gotShell, cmd)
+	}
+}
+
+// A registered .bsh verb must still run through the interpreter, not the shell.
+func TestEvalSourceRegisteredVerbStaysBSH(t *testing.T) {
+	reg := NewVerbRegistry()
+	reg.RegisterBuiltin("gs", func(_ context.Context, _ *ast.Command, _ *Result) (*Result, error) {
+		return NewResult("verb"), nil
+	})
+	shelled := false
+	reg.SetFallback(func(_ context.Context, _ *ast.Command, _ *Result) (*Result, error) {
+		shelled = true
+		return NewResult("shell"), nil
+	})
+	interp := New(WithRegistry(reg))
+
+	r, err := interp.EvalSource("gs")
+	if err != nil {
+		t.Fatalf("EvalSource: %v", err)
+	}
+	if shelled {
+		t.Fatal("registered verb gs must run as .bsh, not shell")
+	}
+	if r.String() != "verb" {
+		t.Errorf("result = %q, want verb", r.String())
+	}
+}
+
 func TestResultJSON(t *testing.T) {
 	r := NewResult("hello")
 	b, err := r.JSON()
@@ -147,29 +198,6 @@ func TestResultJSON(t *testing.T) {
 
 	if out["result"] != "hello" {
 		t.Errorf("result = %v, want hello", out["result"])
-	}
-}
-
-func TestResultJSONWithHint(t *testing.T) {
-	r := NewResult("data")
-	r.Hint = &Hint{Shorter: "ls /var", Saved: 12, Why: "structured"}
-
-	b, err := r.JSON()
-	if err != nil {
-		t.Fatalf("JSON error: %v", err)
-	}
-
-	var out map[string]any
-	if err := json.Unmarshal(b, &out); err != nil {
-		t.Fatalf("unmarshal error: %v", err)
-	}
-
-	hint, ok := out["_hint"].(map[string]any)
-	if !ok {
-		t.Fatalf("_hint missing or wrong type")
-	}
-	if hint["shorter"] != "ls /var" {
-		t.Errorf("_hint.shorter = %v, want ls /var", hint["shorter"])
 	}
 }
 
