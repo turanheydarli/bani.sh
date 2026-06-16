@@ -12,9 +12,16 @@ import (
 	"go.bani.sh/banish/internal/analyzer"
 )
 
+// defaultPricePerMTok is the cost in USD per million input tokens used to
+// estimate dollar savings. banish compacts what the agent reads, so saved
+// tokens are input tokens. The default is the Claude Opus input rate (Claude
+// Code's default model); override with --price for Sonnet (3), Haiku (1), etc.
+const defaultPricePerMTok = 5.0
+
 func gainCmd() *cobra.Command {
 	var jsonOut bool
 	var reset bool
+	var price float64
 
 	cmd := &cobra.Command{
 		Use:   "gain",
@@ -32,24 +39,36 @@ func gainCmd() *cobra.Command {
 			a := analyzer.New()
 			a.LoadFrequency()
 			stats := a.SessionStats()
+			costSaved := float64(stats.SavedTokens) / 1e6 * price
 
 			if jsonOut {
 				b, _ := json.Marshal(stats)
-				fmt.Println(string(b))
+				var m map[string]any
+				json.Unmarshal(b, &m)
+				m["est_cost_usd"] = roundCents(costSaved)
+				m["price_per_mtok"] = price
+				out, _ := json.Marshal(m)
+				fmt.Println(string(out))
 				return nil
 			}
 
-			printGain(stats)
+			printGain(stats, costSaved)
 			return nil
 		},
 	}
 
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "output as JSON")
 	cmd.Flags().BoolVar(&reset, "reset", false, "clear all tracking data")
+	cmd.Flags().Float64Var(&price, "price", defaultPricePerMTok, "USD per million input tokens, for the cost estimate")
 	return cmd
 }
 
-func printGain(s *analyzer.Stats) {
+// roundCents rounds a dollar amount to two decimal places.
+func roundCents(v float64) float64 {
+	return float64(int64(v*100+0.5)) / 100
+}
+
+func printGain(s *analyzer.Stats, costSaved float64) {
 	if s.Commands == 0 {
 		fmt.Println("No tracking data yet.")
 		fmt.Println("Run some commands through banish to start tracking savings.")
@@ -67,6 +86,7 @@ func printGain(s *analyzer.Stats) {
 	if s.RawTokens > 0 {
 		printKV("Raw tokens (before)", formatToks(s.RawTokens))
 		printKV("Tokens saved", fmt.Sprintf("%s (%.1f%%)", formatToks(s.SavedTokens), s.SavingsPct))
+		printKV("Est. cost saved", fmt.Sprintf("$%.2f", costSaved))
 	}
 
 	fmt.Println()
