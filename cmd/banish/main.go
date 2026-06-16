@@ -89,6 +89,8 @@ Usage:
 	root.AddCommand(statusCmd())
 	root.AddCommand(hookCmd())
 	root.AddCommand(auditCmd())
+	root.AddCommand(discoverCmd())
+	root.AddCommand(learnCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "{\"e\":\"CLI\",\"m\":%q}\n", err.Error())
@@ -159,6 +161,7 @@ var subcommands = map[string]bool{
 	"run": true, "check": true, "version": true, "schema": true,
 	"serve": true, "gain": true, "init": true, "help": true,
 	"stop": true, "start": true, "status": true, "hook": true, "audit": true,
+	"discover": true, "learn": true,
 	"--human": true, "--verbose": true, "--timeout": true, "--stats": true,
 	"-h": true, "--help": true,
 }
