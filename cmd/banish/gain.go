@@ -60,6 +60,20 @@ func gainCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "output as JSON")
 	cmd.Flags().BoolVar(&reset, "reset", false, "clear all tracking data")
 	cmd.Flags().Float64Var(&price, "price", defaultPricePerMTok, "USD per million input tokens, for the cost estimate")
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "reset",
+		Short: "Clear all token-savings tracking data",
+		Args:  cobra.NoArgs,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			if err := resetFreqData(); err != nil {
+				return err
+			}
+			fmt.Println("Tracking data reset.")
+			return nil
+		},
+	})
+
 	return cmd
 }
 
