@@ -1,0 +1,37 @@
+!extension node v:1.0
+
+!verb ni
+!args pkg
+!expand exec npm install {pkg}
+!help "npm install"
+
+!verb nr
+!args script
+!expand exec npm run {script}
+!help "npm run script"
+
+!verb yi
+!args pkg
+!expand exec yarn install {pkg}
+!help "yarn install"
+
+!verb pi
+!args pkg
+!expand exec pnpm install {pkg}
+!help "pnpm install"
+
+!filter npm-install
+!match npm install
+!compact "grep -v '^npm warn' | grep -v '^npm notice' | grep -v '^ *$' | tail -5"
+
+!filter npm-run
+!match npm run
+!compact "grep -v '^ *$' | grep -v '^>' | grep -v '^npm warn' | head -40"
+
+!filter yarn-install
+!match yarn install
+!compact "grep -v '^info ' | grep -v '^warning ' | grep -v '^ *$' | tail -5"
+
+!filter pnpm-install
+!match pnpm install
+!compact "grep -v '^Progress:' | grep -v '^\\.\\.' | grep -v '^ *$' | tail -5"

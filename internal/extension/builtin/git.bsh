@@ -1,0 +1,45 @@
+!extension git v:1.0
+
+!verb gs
+!expand exec git status --short
+!help "Git status short format"
+
+!verb ga
+!expand exec git add .
+!help "Git add all files"
+
+!verb gc
+!expand exec git commit
+!help "Git commit"
+
+!verb gp
+!expand exec git push
+!help "Git push to remote"
+
+!verb gl
+!expand exec git log --oneline -10
+!help "Git log last 10 commits"
+
+!verb gd
+!expand exec git diff
+!help "Git diff unstaged changes"
+
+!verb gb
+!expand exec git branch
+!help "List git branches"
+
+!filter git-status
+!match git status
+!compact "grep -v '^ *$' | grep -v 'use .git' | grep -v 'no changes added' | grep -v 'nothing added' | sed '/^$/d'"
+
+!filter git-log
+!match git log
+!compact "grep -v '^Author:' | grep -v '^Date:' | grep -v '^Merge:' | grep -v '^ *$' | sed 's/^commit \(.\{7\}\).*/\1/' | sed 's/^    //' | head -50"
+
+!filter git-diff
+!match git diff
+!compact "grep -v '^index ' | grep -v '^diff --git' | grep -v '^--- a/' | sed 's/^+++ b/--- /' | head -80"
+
+!filter git-branch
+!match git branch
+!compact "sed 's/^  //' | grep -v '^$'"

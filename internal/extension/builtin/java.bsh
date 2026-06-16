@@ -1,0 +1,19 @@
+!extension java v:1.0
+
+!verb mvn
+!args goal
+!expand exec mvn {goal} -q
+!help "Run Maven (quiet mode)"
+
+!verb gw
+!args task
+!expand exec ./gradlew {task} --console=plain
+!help "Run Gradle wrapper (plain console)"
+
+!filter mvn-build
+!match mvn
+!compact "grep -v '^\[INFO\] ---' | grep -v '^\[INFO\] Building ' | grep -v '^\[INFO\] Downloading' | grep -v '^\[INFO\] Downloaded' | grep -v '^ *$' | head -40"
+
+!filter gradle-build
+!match gradlew
+!compact "grep -v '^ *$' | grep -v '^Download ' | grep -v '^> Task ' | grep -v '^Deprecated' | head -40"

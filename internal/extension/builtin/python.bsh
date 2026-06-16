@@ -1,0 +1,19 @@
+!extension python v:1.0
+
+!verb ptest
+!args path
+!expand exec python3 -m pytest {path}
+!help "Run pytest"
+
+!verb pipi
+!args pkg
+!expand exec pip3 install {pkg}
+!help "pip install package"
+
+!filter pytest
+!match pytest
+!compact "grep -v '^=\+' | grep -v '^platform ' | grep -v '^cachedir' | grep -v '^rootdir' | grep -v '^plugins' | grep -v '^collected ' | grep -v '^ *$' | head -50"
+
+!filter pip-install
+!match pip install
+!compact "grep -v 'Requirement already' | grep -v 'Downloading ' | grep -v '  Using cached' | grep -v '^ *$' | tail -5"

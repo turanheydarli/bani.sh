@@ -1,0 +1,34 @@
+!extension cloud v:1.0
+
+!verb s3ls
+!args path
+!expand exec aws s3 ls {path}
+!help "List S3 buckets or objects"
+
+!verb ec2ls
+!expand exec aws ec2 describe-instances --query "Reservations[].Instances[].[InstanceId,State.Name,InstanceType,PrivateIpAddress]" --output table
+!help "List EC2 instances (compact table)"
+
+!verb tfplan
+!expand exec terraform plan -no-color
+!help "Terraform plan (no color codes)"
+
+!verb tfapply
+!expand exec terraform apply -auto-approve -no-color
+!help "Terraform apply (auto-approve, no color)"
+
+!filter terraform-plan
+!match terraform plan
+!compact "grep -v 'Refreshing state' | grep -v 'Acquiring state lock' | grep -v 'Releasing state lock' | grep -v '^ *$' | head -60"
+
+!filter terraform-apply
+!match terraform apply
+!compact "grep -v 'Refreshing state' | grep -v 'Acquiring state lock' | grep -v '^ *$' | head -60"
+
+!filter aws-s3
+!match aws s3
+!compact "grep -v '^ *$' | head -50"
+
+!filter aws-ec2
+!match aws ec2
+!compact "cut -c1-120 | head -60"

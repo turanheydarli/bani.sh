@@ -42,12 +42,13 @@ strips the noise:
 ```
 
 `!match` is a substring match against the command; `!compact` receives raw stdout
-on stdin and writes the compact version to stdout. The built-in filters live in
-[internal/scaffold/extensions.go](internal/scaffold/extensions.go) - add yours
-there, then `go install` and try it with `banish "docker build ."`. Keep the
-one-liner simple: reach for `grep`, `sed`, `head`, `tail`, `cut`, and `awk` before
-anything heavier. If a filter fails, banish returns the raw output, so a partial
-contribution never breaks anyone.
+on stdin and writes the compact version to stdout. The built-in filters are plain
+`.bsh` files in [internal/extension/builtin/](internal/extension/builtin/), one
+per ecosystem, embedded into the binary at build time. Add your filter to the
+matching file (or create a new one), then `go install` and try it with
+`banish "docker build ."`. Keep the one-liner simple: reach for `grep`, `sed`,
+`head`, `tail`, `cut`, and `awk` before anything heavier. If a filter fails,
+banish returns the raw output, so a partial contribution never breaks anyone.
 
 ## Open the PR
 

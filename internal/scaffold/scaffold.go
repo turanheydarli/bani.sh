@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"go.bani.sh/banish/internal/extension"
 )
 
 // InitProject creates a starter BANISH file in the given directory.
@@ -101,8 +103,13 @@ func deployExtensions(home string) (int, error) {
 	extDir := filepath.Join(home, ".banish", "ext")
 	os.MkdirAll(extDir, 0755)
 
+	defaults, err := extension.Builtin()
+	if err != nil {
+		return 0, fmt.Errorf("scaffold.deployExtensions: %w", err)
+	}
+
 	created := 0
-	for name, content := range defaultExtensions {
+	for name, content := range defaults {
 		path := filepath.Join(extDir, name)
 		if _, err := os.Stat(path); err == nil {
 			continue // don't overwrite user customizations

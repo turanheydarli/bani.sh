@@ -1,0 +1,26 @@
+!extension docker v:1.0
+
+!verb dps
+!expand exec docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+!help "List running containers (compact)"
+
+!verb dlogs
+!args name
+!expand exec docker logs --tail 30 {name}
+!help "Last 30 log lines from a container"
+
+!verb dimages
+!expand exec docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+!help "List images (compact)"
+
+!filter docker-build
+!match docker build
+!compact "grep -v '^Sending build' | grep -v '^ ---> [a-f0-9]' | grep -v '^Removing intermediate' | grep -v '^ ---> Running' | grep -v '^Step [0-9]' | head -40"
+
+!filter docker-logs
+!match docker logs
+!compact "tail -30"
+
+!filter docker-compose
+!match docker compose up
+!compact "grep -v '^Pulling ' | grep -v '^Creating ' | grep -v '^Attaching' | grep -v '^ *$' | head -30"

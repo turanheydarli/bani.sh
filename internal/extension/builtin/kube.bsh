@@ -1,0 +1,37 @@
+!extension kube v:1.0
+
+!verb kpods
+!args ns
+!expand exec kubectl get pods {ns} -o wide
+!help "List pods (wide format)"
+
+!verb klogs
+!args pod
+!expand exec kubectl logs --tail 40 {pod}
+!help "Last 40 log lines from a pod"
+
+!verb kns
+!expand exec kubectl get namespaces
+!help "List namespaces"
+
+!verb ksvc
+!args ns
+!expand exec kubectl get svc {ns}
+!help "List services"
+
+!verb kdesc
+!args resource
+!expand exec kubectl describe {resource}
+!help "Describe a resource"
+
+!filter kubectl-describe
+!match kubectl describe
+!compact "grep -v '^ *$' | grep -v 'Annotations:.*<none>' | grep -v 'Labels:.*<none>' | head -60"
+
+!filter kubectl-logs
+!match kubectl logs
+!compact "tail -40"
+
+!filter kubectl-get
+!match kubectl get
+!compact "cut -c1-120 | head -50"
