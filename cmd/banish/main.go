@@ -87,6 +87,7 @@ Usage:
 	root.AddCommand(stopCmd())
 	root.AddCommand(startCmd())
 	root.AddCommand(statusCmd())
+	root.AddCommand(hookCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "{\"e\":\"CLI\",\"m\":%q}\n", err.Error())
@@ -119,20 +120,9 @@ func execDirect(source string) {
 			SavedToks:  result.RawTokens - result.OutTokens,
 		})
 
-		// Check for extension suggestion based on accumulated frequency
-		builtins := map[string]bool{
-			"ls": true, "read": true, "cat": true, "write": true,
-			"mkdir": true, "rm": true, "cp": true, "mv": true,
-			"head": true, "tail": true, "echo": true, "env": true,
-			"sleep": true, "count": true, "fetch": true,
-		}
-		if suggest := tracker.SuggestExtension(source, builtins); suggest != nil {
-			result.Meta = map[string]any{"_suggest_extension": suggest}
-		}
-
-		// Output: if no hint and no meta, return raw result (no JSON wrapper).
-		// If hint or meta present, wrap in JSON with metadata.
-		hasMetadata := result.Hint != nil || len(result.Meta) > 0
+		// Output: if no meta, return raw result (no JSON wrapper).
+		// If meta present, wrap in JSON with metadata.
+		hasMetadata := len(result.Meta) > 0
 		if flagHuman || interp.Human() {
 			fmt.Println(result.String())
 		} else if hasMetadata {
@@ -167,7 +157,7 @@ func execDirect(source string) {
 var subcommands = map[string]bool{
 	"run": true, "check": true, "version": true, "schema": true,
 	"serve": true, "gain": true, "init": true, "help": true,
-	"stop": true, "start": true, "status": true,
+	"stop": true, "start": true, "status": true, "hook": true,
 	"--human": true, "--verbose": true, "--timeout": true, "--stats": true,
 	"-h": true, "--help": true,
 }

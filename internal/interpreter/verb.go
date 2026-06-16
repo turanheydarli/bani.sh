@@ -68,6 +68,22 @@ func (r *VerbRegistry) BuiltinNames() []string {
 	return names
 }
 
+// Has reports whether name is a real registered verb (builtin, extension, or
+// MCP), excluding the system fallback. It lets callers tell a genuine .bsh verb
+// apart from a plain shell command that would only reach the fallback.
+func (r *VerbRegistry) Has(name string) bool {
+	if _, ok := r.builtins[name]; ok {
+		return true
+	}
+	if _, ok := r.extensions[name]; ok {
+		return true
+	}
+	if _, ok := r.mcp[name]; ok {
+		return true
+	}
+	return false
+}
+
 // Resolve looks up a verb by name in priority order:
 // builtins -> extensions -> MCP -> fallback.
 func (r *VerbRegistry) Resolve(name string) (VerbHandler, error) {

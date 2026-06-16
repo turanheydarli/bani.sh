@@ -3,6 +3,7 @@
 package scaffold
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -117,38 +118,16 @@ func deployExtensions(home string) (int, error) {
 // --- Hook installation ---
 
 const hookScript = `#!/bin/bash
-# banish-hook.sh -- Route bash commands through banish for output compaction.
+# banish-hook.sh -- Route Bash commands through banish for output compaction.
 # Installed by: banish init claude-code
+#
+# All decision logic lives in 'banish hook': it reads the tool input on stdin,
+# checks the command against your Claude Code permission rules, and only
+# auto-approves what those rules already allow. Anything else is left for Claude
+# Code to prompt you on, exactly as it would without banish.
 
-if ! command -v jq &>/dev/null; then exit 0; fi
-if ! command -v banish &>/dev/null; then exit 0; fi
-
-INPUT=$(cat)
-CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
-
-[ -z "$CMD" ] && exit 0
-
-# Skip: already banish, shell builtins, multi-line scripts, heredocs
-case "$CMD" in
-  banish*) exit 0 ;;
-  cd\ *|export\ *|source\ *|alias\ *|eval\ *) exit 0 ;;
-  *$'\n'*) exit 0 ;;
-  *"<<"*) exit 0 ;;
-  *EOF*) exit 0 ;;
-esac
-
-# Wrap: banish "original command"
-# Use printf to avoid quote escaping issues
-WRAPPED=$(printf 'banish "%s"' "$(echo "$CMD" | sed 's/"/\\"/g')")
-
-echo "$INPUT" | jq -c --arg cmd "$WRAPPED" '{
-  hookSpecificOutput: {
-    hookEventName: "PreToolUse",
-    permissionDecision: "allow",
-    permissionDecisionReason: "banish output compaction",
-    updatedInput: { command: $cmd }
-  }
-}'
+command -v banish >/dev/null 2>&1 || exit 0
+exec banish hook
 `
 
 func installHook(home string) error {
@@ -169,7 +148,7 @@ func registerHook(home string) error {
 	}
 
 	// Remove any existing banish hooks, then add the current one.
-	stripBanishHook(settings)
+	stripBanishHook(settings, "")
 	addBanishHook(settings, claudeHookPath(home))
 
 	return saveClaudeSettings(home, settings)
@@ -193,16 +172,27 @@ func globalMCPPath(home string) string {
 // loadClaudeSettings reads ~/.claude/settings.json into a map. A missing file
 // yields an empty (non-nil) map so callers can add keys unconditionally.
 func loadClaudeSettings(home string) (map[string]any, error) {
+	return loadSettingsFile(claudeSettingsPath(home))
+}
+
+// saveClaudeSettings writes settings back to ~/.claude/settings.json.
+func saveClaudeSettings(home string, settings map[string]any) error {
+	return saveSettingsFile(claudeSettingsPath(home), settings)
+}
+
+// loadSettingsFile reads any Claude Code settings file into a map. A missing
+// file yields an empty (non-nil) map so callers can add keys unconditionally.
+func loadSettingsFile(path string) (map[string]any, error) {
 	settings := make(map[string]any)
-	data, err := os.ReadFile(claudeSettingsPath(home))
+	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return settings, nil
 		}
-		return nil, fmt.Errorf("scaffold.loadClaudeSettings: %w", err)
+		return nil, fmt.Errorf("scaffold.loadSettingsFile: %w", err)
 	}
 	if err := json.Unmarshal(data, &settings); err != nil {
-		return nil, fmt.Errorf("scaffold.loadClaudeSettings: parse settings.json: %w", err)
+		return nil, fmt.Errorf("scaffold.loadSettingsFile: parse %s: %w", path, err)
 	}
 	if settings == nil {
 		settings = make(map[string]any)
@@ -210,21 +200,23 @@ func loadClaudeSettings(home string) (map[string]any, error) {
 	return settings, nil
 }
 
-// saveClaudeSettings writes settings back to ~/.claude/settings.json.
-func saveClaudeSettings(home string, settings map[string]any) error {
-	dir := filepath.Join(home, ".claude")
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("scaffold.saveClaudeSettings: %w", err)
+// saveSettingsFile writes settings back to the given path, creating parent
+// directories as needed.
+func saveSettingsFile(path string, settings map[string]any) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return fmt.Errorf("scaffold.saveSettingsFile: %w", err)
 	}
 	out, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
-		return fmt.Errorf("scaffold.saveClaudeSettings: %w", err)
+		return fmt.Errorf("scaffold.saveSettingsFile: %w", err)
 	}
-	return os.WriteFile(claudeSettingsPath(home), append(out, '\n'), 0644)
+	return os.WriteFile(path, append(out, '\n'), 0644)
 }
 
-// isBanishHookEntry reports whether a PreToolUse entry runs the banish hook.
-func isBanishHookEntry(entry any) bool {
+// isBanishHookEntry reports whether a PreToolUse entry routes commands through
+// banish. projectDir resolves $CLAUDE_PROJECT_DIR and relative script paths in
+// the hook command; it is empty when inspecting a global settings file.
+func isBanishHookEntry(entry any, projectDir string) bool {
 	m, ok := entry.(map[string]any)
 	if !ok {
 		return false
@@ -238,17 +230,68 @@ func isBanishHookEntry(entry any) bool {
 		if !ok {
 			continue
 		}
-		if cmd, ok := hm["command"].(string); ok && strings.Contains(cmd, "banish") {
+		if cmd, ok := hm["command"].(string); ok && commandRoutesThroughBanish(cmd, projectDir) {
 			return true
 		}
 	}
 	return false
 }
 
+// commandRoutesThroughBanish reports whether a PreToolUse hook command sends
+// commands through banish, either by invoking banish directly or by running a
+// wrapper script whose contents reference banish. This recognizes banish hooks
+// regardless of the wrapper script's filename.
+func commandRoutesThroughBanish(cmd, projectDir string) bool {
+	if strings.Contains(cmd, "banish") {
+		return true
+	}
+	path := hookScriptPath(cmd, projectDir)
+	if path == "" {
+		return false
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	return bytes.Contains(data, []byte("banish"))
+}
+
+// hookScriptPath extracts and resolves the script a hook command runs. It
+// expands the variables Claude Code injects ($CLAUDE_PROJECT_DIR, $HOME) and
+// resolves relative paths against projectDir. It returns "" when the command is
+// not a simple script invocation (for example a bare binary name).
+func hookScriptPath(cmd, projectDir string) string {
+	token := strings.TrimSpace(cmd)
+	if token == "" {
+		return ""
+	}
+	if i := strings.IndexAny(token, " \t"); i >= 0 {
+		token = token[:i] // the first token is the script path
+	}
+	home, _ := os.UserHomeDir()
+	token = strings.NewReplacer(
+		"$CLAUDE_PROJECT_DIR", projectDir,
+		"${CLAUDE_PROJECT_DIR}", projectDir,
+		"$HOME", home,
+		"${HOME}", home,
+	).Replace(token)
+	if strings.HasPrefix(token, "~/") {
+		token = filepath.Join(home, token[2:])
+	}
+	if !strings.Contains(token, "/") {
+		return "" // a bare binary name, not a script file
+	}
+	if !filepath.IsAbs(token) && projectDir != "" {
+		token = filepath.Join(projectDir, token)
+	}
+	return token
+}
+
 // stripBanishHook removes every banish PreToolUse entry, leaving all other
 // hooks intact. Empty containers are pruned so settings stays clean. Returns
-// true if any banish entry was removed.
-func stripBanishHook(settings map[string]any) bool {
+// true if any banish entry was removed. projectDir resolves hook script paths
+// when matching by content; it is empty for the global settings file.
+func stripBanishHook(settings map[string]any, projectDir string) bool {
 	hooks, _ := settings["hooks"].(map[string]any)
 	if hooks == nil {
 		return false
@@ -261,7 +304,7 @@ func stripBanishHook(settings map[string]any) bool {
 	var filtered []any
 	removed := false
 	for _, entry := range pre {
-		if isBanishHookEntry(entry) {
+		if isBanishHookEntry(entry, projectDir) {
 			removed = true
 			continue
 		}
@@ -303,14 +346,16 @@ func addBanishHook(settings map[string]any, hookPath string) {
 }
 
 // hasBanishHook reports whether a banish PreToolUse entry is registered.
-func hasBanishHook(settings map[string]any) bool {
+// projectDir resolves hook script paths when matching by content; it is empty
+// for the global settings file.
+func hasBanishHook(settings map[string]any, projectDir string) bool {
 	hooks, _ := settings["hooks"].(map[string]any)
 	if hooks == nil {
 		return false
 	}
 	pre, _ := hooks["PreToolUse"].([]any)
 	for _, entry := range pre {
-		if isBanishHookEntry(entry) {
+		if isBanishHookEntry(entry, projectDir) {
 			return true
 		}
 	}

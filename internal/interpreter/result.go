@@ -7,21 +7,13 @@ import (
 
 // Result holds the output of a command execution.
 type Result struct {
-	Data any               // the result value
-	Hint *Hint             // optional _hint for shorter alternative
-	Meta map[string]any    // additional response metadata
+	Data any            // the result value
+	Meta map[string]any // additional response metadata
 
 	// Internal tracking -- NOT serialized to JSON output.
-	RawTokens   int64 // tokens before compaction
-	OutTokens   int64 // tokens after compaction
-	SavedPct    int   // savings percentage
-}
-
-// Hint suggests a shorter banish alternative for a bash command.
-type Hint struct {
-	Shorter string `json:"shorter"`
-	Saved   int    `json:"saved"`
-	Why     string `json:"why,omitempty"`
+	RawTokens int64 // tokens before compaction
+	OutTokens int64 // tokens after compaction
+	SavedPct  int   // savings percentage
 }
 
 // NewResult creates a result with the given data.
@@ -38,9 +30,6 @@ func (r *Result) JSON() ([]byte, error) {
 	out := make(map[string]any)
 	out["result"] = r.Data
 
-	if r.Hint != nil {
-		out["_hint"] = r.Hint
-	}
 	for k, v := range r.Meta {
 		out[k] = v
 	}
