@@ -95,8 +95,13 @@ def build_payload():
             value += "\n\nFirst contribution from " + ", ".join(welcomed) + " - welcome aboard."
         fields.append({"name": "Shipped by", "value": value})
 
-    # Links (zero-width field name keeps the row clean).
-    links = ["[Release notes]({})".format(release_url), "[Install](https://bani.sh)"]
+    # Links (zero-width field name keeps the row clean). Install points at the
+    # README install section, which is live today; switch to https://bani.sh once
+    # the site ships.
+    links = [
+        "[Release notes]({})".format(release_url),
+        "[Install](https://github.com/{}#install)".format(repo),
+    ]
     if prev:
         links.append("[Full changelog](https://github.com/{}/compare/{}...{})".format(repo, prev, tag))
     fields.append({"name": "\u200b", "value": " | ".join(links)})
