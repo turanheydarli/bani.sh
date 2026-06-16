@@ -56,22 +56,8 @@ func runCmd() *cobra.Command {
 					SavedToks:  result.RawTokens - result.OutTokens,
 				})
 
-				// Check for extension suggestion
-				builtins := map[string]bool{
-					"ls": true, "read": true, "cat": true, "write": true,
-					"mkdir": true, "rm": true, "cp": true, "mv": true,
-					"head": true, "tail": true, "echo": true, "env": true,
-					"sleep": true, "count": true, "fetch": true,
-				}
-				if suggest := tracker.SuggestExtension(source, builtins); suggest != nil {
-					if result.Meta == nil {
-						result.Meta = make(map[string]any)
-					}
-					result.Meta["_suggest_extension"] = suggest
-				}
-
-				// Output: pure when no metadata, JSON-wrapped when hints/suggestions present
-				hasMetadata := result.Hint != nil || len(result.Meta) > 0
+				// Output: pure when no metadata, JSON-wrapped when metadata present
+				hasMetadata := len(result.Meta) > 0
 				if flagHuman || interp.Human() {
 					fmt.Println(result.String())
 				} else if hasMetadata {

@@ -7,16 +7,13 @@ import (
 
 	"go.bani.sh/banish/internal/ast"
 	"go.bani.sh/banish/internal/compact"
-	"go.bani.sh/banish/internal/hints"
 	"go.bani.sh/banish/internal/interpreter"
 )
 
 // FallbackHandler returns a VerbHandler that executes unknown verbs as OS
-// commands via the Executor. Applies output compaction when a filter exists,
-// and attaches _hint when a banish equivalent exists.
+// commands via the Executor. Applies output compaction when a filter exists.
 // scriptFilters are .bsh-defined filters loaded from extensions and BANISH manifest.
 func FallbackHandler(exec *Executor, scriptFilters []compact.ScriptFilterDef) interpreter.VerbHandler {
-	hinter := hints.New()
 	filters := compact.NewRegistry()
 	filters.RegisterScriptFilters(scriptFilters)
 
@@ -45,9 +42,6 @@ func FallbackHandler(exec *Executor, scriptFilters []compact.ScriptFilterDef) in
 				}
 				result := applyCompaction(filters, baseName, parts[1:], stdout, stderr, r.ExitCode)
 
-				if len(parts) > 0 {
-					result.Hint = hinter.Suggest(parts[0], parts[1:])
-				}
 				if r.ExitCode != 0 {
 					if result.Meta == nil {
 						result.Meta = make(map[string]any)
@@ -74,7 +68,6 @@ func FallbackHandler(exec *Executor, scriptFilters []compact.ScriptFilterDef) in
 				return nil, err
 			}
 			result := applyCompaction(filters, name, args, string(r.Stdout), string(r.Stderr), r.ExitCode)
-			result.Hint = hinter.Suggest(name, args)
 			return result, nil
 		}
 
@@ -84,10 +77,6 @@ func FallbackHandler(exec *Executor, scriptFilters []compact.ScriptFilterDef) in
 		}
 
 		result := applyCompaction(filters, name, args, string(r.Stdout), string(r.Stderr), r.ExitCode)
-
-		// Attach _hint if a shorter banish alternative exists.
-		result.Hint = hinter.Suggest(name, args)
-
 		return result, nil
 	}
 }
