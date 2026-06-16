@@ -23,6 +23,45 @@ archives:
 checksum:
   name_template: checksums.txt
 
+nfpms:
+  - package_name: banish
+    vendor: banish
+    homepage: "https://bani.sh"
+    maintainer: "Turan Heydarli <turanheyder91@gmail.com>"
+    description: "Token-optimized middleware for LLM coding agents."
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+
+homebrew_casks:
+  - name: banish
+    repository:
+      owner: turanheydarli
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    # Dormant until you create the turanheydarli/homebrew-tap repo and add a
+    # HOMEBREW_TAP_TOKEN secret (a PAT with contents:write on that repo). Without
+    # the token the cask is generated but not pushed, so releases stay green.
+    skip_upload: '{{ if eq (envOrDefault "HOMEBREW_TAP_TOKEN" "") "" }}true{{ else }}false{{ end }}'
+    homepage: "https://bani.sh"
+    description: "Token-optimized middleware for LLM coding agents."
+    # Unsigned binary: clear the macOS quarantine flag on install.
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/banish"]
+          end
+
+announce:
+  discord:
+    # Flip to true and add DISCORD_WEBHOOK_ID / DISCORD_WEBHOOK_TOKEN repo
+    # secrets once there is a Discord server to announce releases to.
+    enabled: false
+    message_template: "banish {{ .Tag }} is out: https://github.com/turanheydarli/bani.sh/releases/tag/{{ .Tag }}"
+
 changelog:
   sort: asc
   filters:
