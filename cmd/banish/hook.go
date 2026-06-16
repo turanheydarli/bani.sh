@@ -56,31 +56,61 @@ func hostFromString(s string) permissions.Host {
 	return permissions.HostClaudeCode
 }
 
-// decideHook returns the hook output JSON for a command, or "" to defer to the
-// host's normal permission flow (which leaves the original command untouched).
+// decideHook returns the hook output for a command in the host's native JSON
+// envelope, or "" to emit nothing (Claude Code defers; Cursor callers turn this
+// into "{}", which Cursor requires on every path).
 func decideHook(cmd string, host permissions.Host) string {
+	decision, wrapped := classifyHook(cmd, host)
+	if host == permissions.HostCursor {
+		return cursorOutput(decision, wrapped)
+	}
+	return claudeOutput(decision, wrapped)
+}
+
+// classifyHook decides what to do with a command: it returns one of allow / ask
+// / deny / defer / skip, plus the wrapped command when a rewrite applies.
+func classifyHook(cmd string, host permissions.Host) (decision, wrapped string) {
 	trimmed := strings.TrimSpace(cmd)
 	if trimmed == "" || shouldSkipHook(trimmed) {
-		return ""
+		return "skip", ""
 	}
-
 	verdict := permissions.CheckFor(trimmed, host)
-
-	// Deny: let the host apply its own deny handling on the original command.
 	if verdict == permissions.Deny {
-		return ""
+		return "deny", ""
 	}
-	// Constructs we cannot safely rewrite are left to the host untouched.
 	if permissions.ContainsUnattestable(trimmed) {
+		return "defer", ""
+	}
+	if verdict == permissions.Allow {
+		appendAuditAllow(host, cmd)
+		return "allow", wrapCommand(cmd)
+	}
+	return "ask", wrapCommand(cmd)
+}
+
+// claudeOutput emits the Claude Code PreToolUse envelope, or "" to defer.
+func claudeOutput(decision, wrapped string) string {
+	switch decision {
+	case "allow", "ask":
+		return hookOutput(decision, wrapped)
+	default: // skip, deny, defer
 		return ""
 	}
+}
 
-	decision := "ask"
-	if verdict == permissions.Allow {
-		decision = "allow"
-		appendAuditAllow(host, cmd)
+// cursorOutput emits Cursor's preToolUse envelope. Cursor requires JSON on every
+// path, so anything other than an auto-allow returns "{}" (no rewrite). banish
+// only rewrites and auto-allows commands Cursor's own rules already allow.
+func cursorOutput(decision, wrapped string) string {
+	if decision != "allow" {
+		return "{}"
 	}
-	return hookOutput(decision, wrapCommand(cmd))
+	out := map[string]any{
+		"permission":    "allow",
+		"updated_input": map[string]any{"command": wrapped},
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
 }
 
 // appendAuditAllow records an auto-approved command so you can review exactly

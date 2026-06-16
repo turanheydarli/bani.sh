@@ -66,11 +66,15 @@ func InitClaudeCode(dir string) error {
 }
 
 
-// InitCursor sets up banish for Cursor: MCP config + .cursorrules.
+// InitCursor sets up banish for Cursor: the global preToolUse hook (so commands
+// are compacted), the project MCP config, and project .cursorrules.
 func InitCursor(dir string) error {
 	home, _ := os.UserHomeDir()
 	if home != "" {
 		deployExtensions(home)
+		if err := installCursorHook(home); err != nil {
+			return fmt.Errorf("install cursor hook: %w", err)
+		}
 	}
 
 	cursorDir := filepath.Join(dir, ".cursor")
@@ -124,28 +128,15 @@ func deployExtensions(home string) (int, error) {
 
 // --- Hook installation ---
 
-const hookScript = `#!/bin/bash
-# banish-hook.sh -- Route Bash commands through banish for output compaction.
-# Installed by: banish init claude-code
-#
-# All decision logic lives in 'banish hook': it reads the tool input on stdin,
-# checks the command against your Claude Code permission rules, and only
-# auto-approves what those rules already allow. Anything else is left for Claude
-# Code to prompt you on, exactly as it would without banish.
-
-command -v banish >/dev/null 2>&1 || exit 0
-exec banish hook
-`
-
 func installHook(home string) error {
 	hookDir := filepath.Join(home, ".claude", "hooks")
 	os.MkdirAll(hookDir, 0755)
 
-	hookPath := filepath.Join(hookDir, "banish-hook.sh")
-	if err := os.WriteFile(hookPath, []byte(hookScript), 0755); err != nil {
+	script, err := agentAsset("claude-code", "hook.sh")
+	if err != nil {
 		return err
 	}
-	return nil
+	return os.WriteFile(claudeHookPath(home), script, 0755)
 }
 
 func registerHook(home string) error {
@@ -423,56 +414,91 @@ func findBanishBinary() string {
 
 // --- CLAUDE.md ---
 
-const claudeMDContent = `## Banish
-
-banish is installed. Bash commands are automatically routed through banish
-for output compaction and token savings.
-
-What banish does:
-- Compacts command output (git status, log, diff, ls, find, grep, etc.)
-- Tracks token savings (run banish gain to see stats)
-- Provides MCP tools (banish_run, banish_ls, banish_read, banish_fetch)
-- Auto-exposes extension verbs as MCP tools
-
-Extensions in ~/.banish/ext/ define:
-- Verb shortcuts (gs = git status --short, dps = docker ps compact, etc.)
-- Output filters (strip noise from git, npm, cargo, docker, kubectl, etc.)
-
-### BANISH file
-
-If a BANISH file exists in the project root, read it for project-specific
-verbs and filters.
-`
-
 func writeClaudeMD(path string) error {
+	content, err := agentAsset("claude-code", "awareness.md")
+	if err != nil {
+		return err
+	}
 	if _, err := os.Stat(path); err == nil {
 		existing, _ := os.ReadFile(path)
 		if strings.Contains(string(existing), "## Banish") {
 			return nil
 		}
-		content := string(existing) + "\n" + claudeMDContent
-		return os.WriteFile(path, []byte(content), 0644)
+		return os.WriteFile(path, append(append(existing, '\n'), content...), 0644)
 	}
-	return os.WriteFile(path, []byte(claudeMDContent), 0644)
+	return os.WriteFile(path, content, 0644)
 }
 
 // --- Cursor ---
 
-const cursorRulesContent = `Bash commands are routed through banish for output compaction and token savings.
-banish provides MCP tools and auto-exposes extension verbs.
-Read the BANISH file in the project root for project-specific verbs and filters.
-`
-
 func writeCursorRules(path string) error {
+	content, err := agentAsset("cursor", "rules.md")
+	if err != nil {
+		return err
+	}
 	if _, err := os.Stat(path); err == nil {
 		existing, _ := os.ReadFile(path)
 		if strings.Contains(string(existing), "banish") {
 			return nil
 		}
-		content := string(existing) + "\n" + cursorRulesContent
-		return os.WriteFile(path, []byte(content), 0644)
+		return os.WriteFile(path, append(append(existing, '\n'), content...), 0644)
 	}
-	return os.WriteFile(path, []byte(cursorRulesContent), 0644)
+	return os.WriteFile(path, content, 0644)
+}
+
+// installCursorHook deploys the Cursor hook script globally and registers it in
+// ~/.cursor/hooks.json (shared by the Cursor editor and cursor-cli).
+func installCursorHook(home string) error {
+	hookDir := filepath.Join(home, ".cursor", "hooks")
+	if err := os.MkdirAll(hookDir, 0755); err != nil {
+		return err
+	}
+	script, err := agentAsset("cursor", "hook.sh")
+	if err != nil {
+		return err
+	}
+	hookPath := filepath.Join(hookDir, "banish-hook.sh")
+	if err := os.WriteFile(hookPath, script, 0755); err != nil {
+		return err
+	}
+	return registerCursorHook(home, hookPath)
+}
+
+// registerCursorHook adds the banish preToolUse entry to ~/.cursor/hooks.json,
+// merging with any existing config. It is idempotent.
+func registerCursorHook(home, hookPath string) error {
+	path := filepath.Join(home, ".cursor", "hooks.json")
+
+	root := map[string]any{}
+	if data, err := os.ReadFile(path); err == nil && len(bytes.TrimSpace(data)) > 0 {
+		if json.Unmarshal(data, &root) != nil {
+			root = map[string]any{}
+		}
+	}
+	if _, ok := root["version"]; !ok {
+		root["version"] = 1
+	}
+	hooks, _ := root["hooks"].(map[string]any)
+	if hooks == nil {
+		hooks = map[string]any{}
+	}
+	pre, _ := hooks["preToolUse"].([]any)
+	for _, e := range pre {
+		if m, ok := e.(map[string]any); ok {
+			if c, ok := m["command"].(string); ok && strings.Contains(c, "banish") {
+				return nil // already registered
+			}
+		}
+	}
+	pre = append(pre, map[string]any{"command": hookPath, "matcher": "Shell"})
+	hooks["preToolUse"] = pre
+	root["hooks"] = hooks
+
+	out, err := json.MarshalIndent(root, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(out, '\n'), 0644)
 }
 
 // --- Project detection ---
