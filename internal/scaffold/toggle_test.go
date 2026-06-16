@@ -1,16 +1,31 @@
 package scaffold
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
 // withHome isolates the test from the real home directory. os.UserHomeDir
 // resolves to $HOME on unix, so overriding it redirects all ~/.claude and
-// ~/.banish writes into a temp dir.
+// ~/.banish writes into a temp dir. It also moves the working directory into a
+// fresh temp dir: project-scoped hook detection walks up from the cwd, and the
+// real repository has its own .claude directory that tests must not touch.
 func withHome(t *testing.T) string {
 	t.Helper()
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+
+	wd := t.TempDir()
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(wd); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(old) })
+
 	return home
 }
 
@@ -105,7 +120,7 @@ func TestStopPreservesOtherHooks(t *testing.T) {
 	if len(pre) != 1 {
 		t.Fatalf("expected 1 remaining hook, got %d", len(pre))
 	}
-	if hasBanishHook(settings) {
+	if hasBanishHook(settings, "") {
 		t.Fatal("banish hook should be removed")
 	}
 }
@@ -135,7 +150,7 @@ func TestStopStartIdempotent(t *testing.T) {
 	pre := hooks["PreToolUse"].([]any)
 	count := 0
 	for _, e := range pre {
-		if isBanishHookEntry(e) {
+		if isBanishHookEntry(e, "") {
 			count++
 		}
 	}
@@ -157,6 +172,65 @@ func TestStartWithoutInstall(t *testing.T) {
 	withHome(t)
 	if err := Start("claude-code"); err == nil {
 		t.Fatal("expected error when hook is not installed")
+	}
+}
+
+// Stop removes a project-scoped hook that routes through banish even when the
+// wrapper script is not named "banish" (matched by reading its contents).
+func TestStopProjectScopedWrapper(t *testing.T) {
+	withHome(t)
+
+	proj, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+
+	// A project wrapper hook whose filename does not contain "banish", but
+	// whose contents route commands through banish.
+	hookDir := filepath.Join(proj, ".claude", "hooks")
+	if err := os.MkdirAll(hookDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	script := filepath.Join(hookDir, "wrap-bash.sh")
+	if err := os.WriteFile(script, []byte("#!/bin/bash\nbanish run -e \"$CMD\"\n"), 0755); err != nil {
+		t.Fatalf("write script: %v", err)
+	}
+
+	projSettings := filepath.Join(proj, ".claude", "settings.json")
+	cfg := map[string]any{
+		"hooks": map[string]any{
+			"PreToolUse": []any{
+				map[string]any{
+					"matcher": "Bash",
+					"hooks": []any{
+						map[string]any{
+							"type":    "command",
+							"command": "$CLAUDE_PROJECT_DIR/.claude/hooks/wrap-bash.sh",
+						},
+					},
+				},
+			},
+		},
+	}
+	if err := saveSettingsFile(projSettings, cfg); err != nil {
+		t.Fatalf("save project settings: %v", err)
+	}
+
+	st, _ := Status()
+	if !st["claude-code"].Active {
+		t.Fatal("expected active: project wrapper routes through banish")
+	}
+
+	if err := Stop("claude-code"); err != nil {
+		t.Fatalf("Stop: %v", err)
+	}
+
+	got, err := loadSettingsFile(projSettings)
+	if err != nil {
+		t.Fatalf("reload project settings: %v", err)
+	}
+	if hasBanishHook(got, proj) {
+		t.Fatal("project wrapper hook should be removed after stop")
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // AgentState reports whether banish is currently intercepting commands for an
@@ -44,7 +45,9 @@ func Start(agent string) error {
 	}
 }
 
-// Status reports the active state of banish per supported agent.
+// Status reports the active state of banish per supported agent. banish is
+// active if any settings scope (global or the current project) registers a hook
+// that routes commands through banish.
 func Status() (map[string]AgentState, error) {
 	home, err := homeDir()
 	if err != nil {
@@ -55,33 +58,100 @@ func Status() (map[string]AgentState, error) {
 	if _, err := os.Stat(claudeHookPath(home)); err == nil {
 		state.Hook = true
 	}
-	settings, err := loadClaudeSettings(home)
-	if err != nil {
-		return nil, err
+	for _, sc := range settingsScopes(home) {
+		settings, err := loadSettingsFile(sc.path)
+		if err != nil {
+			return nil, err
+		}
+		if hasBanishHook(settings, sc.projectDir) {
+			state.Active = true
+		}
 	}
-	state.Active = state.Hook && hasBanishHook(settings)
 	state.MCP = mcpHasBanish(globalMCPPath(home))
 
 	return map[string]AgentState{"claude-code": state}, nil
 }
 
+// stopClaudeCode removes the banish hook from every settings scope (global and
+// the current project) without deleting any other assets. Existing files are
+// rewritten only when a banish hook was actually present; missing files are
+// never created.
 func stopClaudeCode() error {
 	home, err := homeDir()
 	if err != nil {
 		return err
 	}
-	// Nothing installed: stopping is a no-op (do not create an empty settings file).
-	if _, err := os.Stat(claudeSettingsPath(home)); os.IsNotExist(err) {
-		return nil
+	for _, sc := range settingsScopes(home) {
+		if _, err := os.Stat(sc.path); os.IsNotExist(err) {
+			continue // do not create a settings file just to strip nothing
+		}
+		settings, err := loadSettingsFile(sc.path)
+		if err != nil {
+			return err
+		}
+		if stripBanishHook(settings, sc.projectDir) {
+			if err := saveSettingsFile(sc.path, settings); err != nil {
+				return err
+			}
+		}
 	}
-	settings, err := loadClaudeSettings(home)
+	return nil
+}
+
+// settingsScope is one Claude Code settings file banish may inspect or edit,
+// paired with the project directory used to resolve relative hook script paths
+// inside it (empty for the global scopes).
+type settingsScope struct {
+	path       string
+	projectDir string
+}
+
+// settingsScopes returns every settings file banish should manage: the global
+// user files plus, when the working tree has its own .claude directory, the
+// project-scoped files Claude Code merges on top of the global ones.
+func settingsScopes(home string) []settingsScope {
+	scopes := []settingsScope{
+		{path: claudeSettingsPath(home)},
+		{path: claudeLocalSettingsPath(home)},
+	}
+	if pdir := projectClaudeDir(home); pdir != "" {
+		scopes = append(scopes,
+			settingsScope{path: filepath.Join(pdir, ".claude", "settings.json"), projectDir: pdir},
+			settingsScope{path: filepath.Join(pdir, ".claude", "settings.local.json"), projectDir: pdir},
+		)
+	}
+	return scopes
+}
+
+// claudeLocalSettingsPath is the user-local Claude Code settings override.
+func claudeLocalSettingsPath(home string) string {
+	return filepath.Join(home, ".claude", "settings.local.json")
+}
+
+// projectClaudeDir returns the nearest ancestor of the working directory that
+// contains a .claude directory, which is how Claude Code locates project-scoped
+// settings. It returns "" when none is found, or when the only match is the
+// user's home directory (whose ~/.claude is the global scope, handled
+// separately).
+func projectClaudeDir(home string) string {
+	cwd, err := os.Getwd()
 	if err != nil {
-		return err
+		return ""
 	}
-	if !stripBanishHook(settings) {
-		return nil // already stopped
+	dir := cwd
+	for {
+		if dir == home {
+			return ""
+		}
+		if fi, err := os.Stat(filepath.Join(dir, ".claude")); err == nil && fi.IsDir() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
 	}
-	return saveClaudeSettings(home, settings)
 }
 
 func startClaudeCode() error {
