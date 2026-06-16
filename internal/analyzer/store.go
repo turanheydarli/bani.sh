@@ -57,10 +57,10 @@ func (a *Analyzer) LoadFrequency() {
 		if r.TokenCost < 0 || r.TokenCost > 1000000000 {
 			r.TokenCost = 0
 		}
-		if r.RawToks < 0 {
+		if r.RawToks < 0 || r.RawToks > 1000000000 {
 			r.RawToks = 0
 		}
-		if r.SavedToks < 0 {
+		if r.SavedToks < 0 || r.SavedToks > 1000000000 {
 			r.SavedToks = 0
 		}
 		a.freq[r.Command] += r.Count
@@ -75,6 +75,7 @@ func (a *Analyzer) LoadFrequency() {
 			OutputToks: r.TokenCost / 2,
 			RawToks:    r.RawToks,
 			SavedToks:  r.SavedToks,
+			loaded:     true,
 		})
 	}
 }
@@ -115,6 +116,11 @@ func (a *Analyzer) SaveFrequency() {
 	a.mu.Lock()
 	for _, e := range a.entries {
 		if e.Timestamp.IsZero() {
+			continue
+		}
+		// Entries loaded from disk are already in recs; merging them again
+		// double-counts their tokens on every run.
+		if e.loaded {
 			continue
 		}
 		r, ok := recs[e.Command]

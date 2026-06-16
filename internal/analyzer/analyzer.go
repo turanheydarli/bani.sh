@@ -23,6 +23,11 @@ type Entry struct {
 	Savings    int64  // BashEquiv - InputToks
 	Mode       string // "bsh" or "bash"
 	HintShown  bool
+
+	// loaded marks an entry that was read back from the on-disk aggregates.
+	// Such entries are counted in stats but must not be merged into the store
+	// again on save, or their token totals double on every run. Not persisted.
+	loaded bool
 }
 
 // Stats holds aggregate statistics.

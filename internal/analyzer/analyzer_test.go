@@ -110,3 +110,29 @@ func TestEmptyStats(t *testing.T) {
 		t.Errorf("saved = %d, want 0", s.SavedTokens)
 	}
 }
+
+// Loading the on-disk aggregates and saving again must not re-merge them, or
+// token totals double on every run.
+func TestSaveDoesNotDoubleCountLoaded(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	a := New()
+	a.Track(Entry{Timestamp: time.Now(), Command: "git status", RawToks: 100, SavedToks: 60})
+	a.SaveFrequency()
+
+	// Load the aggregate and save again without tracking anything new.
+	b := New()
+	b.LoadFrequency()
+	b.SaveFrequency()
+
+	// Totals must be unchanged, not doubled.
+	c := New()
+	c.LoadFrequency()
+	stats := c.SessionStats()
+	if stats.RawTokens != 100 {
+		t.Fatalf("RawTokens = %d, want 100 (loaded entry double-counted on save)", stats.RawTokens)
+	}
+	if stats.SavedTokens != 60 {
+		t.Fatalf("SavedTokens = %d, want 60", stats.SavedTokens)
+	}
+}
