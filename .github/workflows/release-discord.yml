@@ -1,0 +1,58 @@
+name: release-discord
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    # Pre-releases (v1.2.3-rc.1) belong in #dev, not #announcements -- skip them.
+    if: ${{ !contains(github.ref_name, '-') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gather release data
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          prev=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
+
+          # GoReleaser creates the GitHub Release on the same tag push; wait for it.
+          for _ in $(seq 1 24); do
+            if gh release view "$TAG" >/dev/null 2>&1; then break; fi
+            sleep 5
+          done
+          notes=$(gh release view "$TAG" --json body --jq .body 2>/dev/null || true)
+
+          if [ -n "$prev" ]; then range="${prev}..${TAG}"; else range="$TAG"; fi
+          strip='s/^[[:space:]]*[0-9]+[[:space:]]+//; s/ <.*$//'
+          contributors=$(git shortlog -sne "$range" | sed -E "$strip" | sort -u)
+          if [ -n "$prev" ]; then
+            prior=$(git shortlog -sne "$prev" | sed -E "$strip" | sort -u)
+          else
+            prior=""
+          fi
+          first=$(comm -23 <(printf '%s\n' "$contributors") <(printf '%s\n' "$prior") || true)
+
+          d="EOF_$(date +%s%N)"
+          {
+            echo "PREV_TAG=${prev}"
+            echo "NOTES<<${d}";        printf '%s\n' "$notes";        echo "${d}"
+            echo "CONTRIBUTORS<<${d}c"; printf '%s\n' "$contributors"; echo "${d}c"
+            echo "FIRST_TIMERS<<${d}f"; printf '%s\n' "$first";        echo "${d}f"
+          } >> "$GITHUB_ENV"
+
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: python3 scripts/post-release.py

@@ -55,13 +55,6 @@ homebrew_casks:
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/banish"]
           end
 
-announce:
-  discord:
-    # Flip to true and add DISCORD_WEBHOOK_ID / DISCORD_WEBHOOK_TOKEN repo
-    # secrets once there is a Discord server to announce releases to.
-    enabled: false
-    message_template: "banish {{ .Tag }} is out: https://github.com/turanheydarli/bani.sh/releases/tag/{{ .Tag }}"
-
 changelog:
   sort: asc
   filters:
