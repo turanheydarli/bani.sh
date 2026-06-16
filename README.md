@@ -1,12 +1,17 @@
 <p align="center">
-  <img src="assets/mascot-ghost.svg" width="96" alt="banish mascot" />
+  <img src="assets/mascot-ghost.svg" width="84" alt="banish mascot" />
 </p>
 
-<h1 align="center">banish</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg" />
+    <img src="assets/wordmark-light.svg" width="150" alt="banish" />
+  </picture>
+</p>
 
 <p align="center">
   Token-optimized middleware for LLM coding agents.<br/>
-  30-90% fewer tokens on the commands your agent runs all day.
+  <b>30-90% fewer tokens</b> on the commands your agent runs all day.
 </p>
 
 <p align="center">
