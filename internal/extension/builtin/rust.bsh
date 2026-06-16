@@ -24,7 +24,7 @@
 
 !filter cargo-test
 !match cargo test
-!compact "grep -v '^ *Compiling ' | grep -v '^ *Downloading ' | grep -v '^ *$' | grep -v '^running ' | head -50"
+!compact "grep -E '^(error|warning:|test result:|FAILED|---- )|panicked' | head -40"
 
 !filter cargo-clippy
 !match cargo clippy

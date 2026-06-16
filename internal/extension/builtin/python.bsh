@@ -12,7 +12,7 @@
 
 !filter pytest
 !match pytest
-!compact "grep -v '^=\+' | grep -v '^platform ' | grep -v '^cachedir' | grep -v '^rootdir' | grep -v '^plugins' | grep -v '^collected ' | grep -v '^ *$' | head -50"
+!compact "grep -E '^(FAILED|ERROR)|[0-9]+ (passed|failed|error|skipped)' | head -40"
 
 !filter pip-install
 !match pip install

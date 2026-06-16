@@ -1,0 +1,31 @@
+!extension go v:1.0
+
+!verb gob
+!expand exec go build ./...
+!help "Go build all packages"
+
+!verb got
+!args path
+!expand exec go test {path}
+!help "Go test"
+
+!verb gov
+!expand exec go vet ./...
+!help "Go vet all packages"
+
+!verb gor
+!args path
+!expand exec go run {path}
+!help "Go run"
+
+!filter go-test
+!match go test
+!compact "grep -E '^(ok |FAIL|PASS|--- FAIL|--- SKIP|panic:)|_test\.go:|^# ' | head -50"
+
+!filter go-build
+!match go build
+!compact "grep -E '\.go:[0-9]+|^# |error' | head -40"
+
+!filter go-vet
+!match go vet
+!compact "grep -E '\.go:[0-9]+|^# ' | head -40"

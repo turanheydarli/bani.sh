@@ -35,3 +35,7 @@
 !filter pnpm-install
 !match pnpm install
 !compact "grep -v '^Progress:' | grep -v '^\\.\\.' | grep -v '^ *$' | tail -5"
+
+!filter npm-test
+!match npm test
+!compact "grep -E 'FAIL|Tests:|Test Files:|Expected|Received|Error' | head -40"
