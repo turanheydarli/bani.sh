@@ -62,12 +62,13 @@ func (interp *Interpreter) EvalSource(source string) (*Result, error) {
 		return interp.evalShell(source)
 	}
 
-	// Detected as .bsh syntactically, but a single bare command whose verb is
-	// not a registered .bsh verb is really a plain shell command. Executing it
-	// through the .bsh command grammar would drop positional arguments (the
-	// grammar keeps only verb + one target + key:value modifiers), so run the
-	// original string verbatim through the shell instead. This is what makes
-	// commands like `go test ./internal/scaffold/` keep their path.
+	// Detected as .bsh syntactically, but the .bsh command grammar is lossy
+	// for shell commands: it keeps only verb + one target + key:value
+	// modifiers, so paths like ./... are silently dropped. Only execute the
+	// parse tree when every verb in it is a registered .bsh verb; otherwise
+	// the input is really a shell command (or a pipeline containing one) and
+	// must run verbatim through the shell. Deciding which filter applies is
+	// done later on a copy of the string -- never on the command that runs.
 	l := lexer.New(source)
 	p := parser.New(l)
 	prog := p.ParseProgram()
@@ -75,7 +76,7 @@ func (interp *Interpreter) EvalSource(source string) (*Result, error) {
 		// Not valid .bsh after all; run verbatim through the shell.
 		return interp.evalShell(source)
 	}
-	if interp.isPlainShellCommand(prog) {
+	if !interp.allVerbsRegistered(prog) {
 		return interp.evalShell(source)
 	}
 
@@ -97,19 +98,49 @@ func (interp *Interpreter) evalShell(source string) (*Result, error) {
 	return handler(interp.ctx, cmd, nil)
 }
 
-// isPlainShellCommand reports whether prog is a single bare command whose verb
-// is not a registered .bsh verb -- i.e. a shell command that would only reach
-// the system fallback, where the lossy verb+target grammar drops arguments.
-func (interp *Interpreter) isPlainShellCommand(prog *ast.Program) bool {
-	if len(prog.Statements) != 1 {
-		return false
+// allVerbsRegistered walks the program and reports whether every command
+// resolves to a registered .bsh verb. A single unregistered verb anywhere
+// (including inside a pipeline stage or assignment) means the input is a
+// shell command and must not be executed through the lossy .bsh grammar.
+func (interp *Interpreter) allVerbsRegistered(prog *ast.Program) bool {
+	for _, stmt := range prog.Statements {
+		if !interp.statementVerbsRegistered(stmt) {
+			return false
+		}
 	}
-	cmd, ok := prog.Statements[0].(*ast.Command)
-	if !ok {
-		return false
+	return true
+}
+
+func (interp *Interpreter) statementVerbsRegistered(stmt ast.Statement) bool {
+	switch s := stmt.(type) {
+	case *ast.Command:
+		return interp.commandVerbRegistered(s)
+	case *ast.Pipeline:
+		for _, cmd := range s.Commands {
+			if !interp.commandVerbRegistered(cmd) {
+				return false
+			}
+		}
+		return true
+	case *ast.Assignment:
+		return interp.statementVerbsRegistered(s.Value)
+	case *ast.Directive:
+		return true // directives are .bsh-only syntax
+	default:
+		return true
+	}
+}
+
+func (interp *Interpreter) commandVerbRegistered(cmd *ast.Command) bool {
+	switch cmd.Verb.(type) {
+	case *ast.MCPCall, *ast.VariableRef:
+		return true // .bsh-only constructs
 	}
 	name := interp.verbName(cmd)
-	return name != "" && name != "__shell__" && !interp.registry.Has(name)
+	if name == "" || name == "__shell__" {
+		return true
+	}
+	return interp.registry.Has(name)
 }
 
 func (interp *Interpreter) evalBSH(source string) (*Result, error) {
