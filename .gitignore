@@ -5,4 +5,5 @@ bin/
 .DS_Store
 .local/
 .claude/
-.mcp.json__pycache__/
+.mcp.json
+__pycache__/
