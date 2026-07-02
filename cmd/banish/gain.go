@@ -103,6 +103,9 @@ func printGain(s *analyzer.Stats, costSaved float64) {
 		printKV("Tokens saved", fmt.Sprintf("%s (%.1f%%)", formatToks(s.SavedTokens), s.SavingsPct))
 		printKV("Est. cost saved", fmt.Sprintf("$%.2f", costSaved))
 	}
+	if s.Rewrites > 0 {
+		printKV("Commands rewritten", fmt.Sprintf("%d", s.Rewrites))
+	}
 
 	fmt.Println()
 

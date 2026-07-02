@@ -45,36 +45,29 @@ func runCmd() *cobra.Command {
 			}
 
 			if result != nil {
-				outputToks := analyzer.EstimateTokens(result.String())
+				printed, show := renderOutput(result, flagHuman || interp.Human())
+				outputToks := analyzer.EstimateTokens(printed)
 
+				var saved int64
+				if result.RawTokens > 0 || result.OutTokens > 0 {
+					saved = result.RawTokens - outputToks
+				}
+				rewrites := int64(0)
+				if result.Rewritten != "" {
+					rewrites = 1
+				}
 				tracker.Track(analyzer.Entry{
 					Timestamp:  time.Now(),
 					Command:    source,
 					InputToks:  inputToks,
 					OutputToks: outputToks,
 					RawToks:    result.RawTokens,
-					SavedToks:  result.RawTokens - result.OutTokens,
+					SavedToks:  saved,
+					Rewrites:   rewrites,
 				})
 
-				// Output: pure when no metadata, JSON-wrapped when metadata present
-				hasMetadata := len(result.Meta) > 0
-				if flagHuman || interp.Human() {
-					fmt.Println(result.String())
-				} else if hasMetadata {
-					b, _ := result.JSON()
-					fmt.Println(string(b))
-				} else {
-					switch v := result.Data.(type) {
-					case string:
-						if v != "" {
-							fmt.Println(v)
-						}
-					case nil:
-						// nothing
-					default:
-						b, _ := json.Marshal(v)
-						fmt.Println(string(b))
-					}
+				if show {
+					fmt.Println(printed)
 				}
 			}
 

@@ -18,14 +18,16 @@
 !expand exec go run {path}
 !help "Go run"
 
-!filter go-test
-!match go test
-!compact "grep -E '^(ok |FAIL|PASS|--- FAIL|--- SKIP|panic:)|_test\.go:|^# ' | head -50"
+# go test filtering ships as an embedded default.
 
 !filter go-build
 !match go build
-!compact "grep -E '\.go:[0-9]+|^# |error' | head -40"
+!keep "\.go:\d+|^# |error"
+!max-lines 40
+!overflow "+{n} more"
 
 !filter go-vet
 !match go vet
-!compact "grep -E '\.go:[0-9]+|^# ' | head -40"
+!keep "\.go:\d+|^# |vet:"
+!max-lines 40
+!overflow "+{n} more"

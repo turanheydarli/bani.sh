@@ -1,0 +1,73 @@
+# Built-in compaction defaults, embedded in the banish binary.
+# Everything here uses the same .bsh directives available to user
+# extensions in ~/.banish/ext/ -- user definitions take precedence.
+#
+# Rewrites swap a verbose command for its machine-readable variant before
+# execution. They apply only to plain invocations (no pipes, redirects, or
+# chaining) and never when the caller already asked for a format (!unless).
+#
+# Filters compact output in-process with declarative ops:
+#   !drop "re"            remove matching lines (repeatable)
+#   !keep "re"            keep only matching lines (repeatable)
+#   !sub "re" "repl"      per-line regex replacement (repeatable, ordered)
+#   !tally "re" "tpl"     count matching input lines, append tpl ({n} = count)
+#   !group-by "re"        first capture group keys line grouping
+#   !per-group N          max lines kept per group
+#   !max-lines N          total line cap
+#   !max-line-len N       per-line character clamp
+#   !overflow "tpl"       truncation marker, {n} = omitted count
+
+!extension defaults v:1.0
+
+!rewrite git-status
+!match git status
+!unless --porcelain --short -s -sb -z --format --long -v
+!to git status --porcelain -b
+
+!rewrite git-log
+!match git log
+!unless --oneline --format --pretty -p --patch --stat --numstat --shortstat --graph -n --follow -L -S -G
+!to git log --oneline -20
+
+!filter git-status
+!match git status
+!max-lines 50
+!overflow "+{n} more files"
+
+!filter go-test
+!match go test
+!tally "^ok\s" "== {n} package(s) ok"
+!drop "^ok\s"
+!drop "^\s*=== (RUN|PAUSE|CONT|NAME)"
+!drop "^\s*--- PASS"
+!drop "^PASS$"
+!drop "^coverage:"
+!drop "\[no test files\]"
+!max-lines 200
+!overflow "+{n} more lines"
+
+!filter grep
+!match grep
+!group-by "^([^:\s][^:]*):\d+:"
+!per-group 5
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more matches"
+
+!filter rg
+!match rg
+!group-by "^([^:\s][^:]*):\d+:"
+!per-group 5
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more matches"
+
+!filter ls
+!match ls
+!max-lines 100
+!overflow "+{n} more entries"
+
+!filter find
+!match find
+!max-lines 100
+!overflow "+{n} more entries"

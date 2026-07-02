@@ -8,11 +8,14 @@ import (
 	"go.bani.sh/banish/internal/shell"
 )
 
-// ScriptFilterDef defines a filter that pipes output through a shell command.
+// ScriptFilterDef defines a .bsh output filter: an optional shell pipe
+// (!compact) plus declarative ops (!drop/!keep/!max-lines/...) that run
+// in-process without spawning a subprocess.
 type ScriptFilterDef struct {
-	Name    string // filter name (for logging/debugging)
-	Match   string // command substring to match
-	Compact string // shell command that receives raw output on stdin
+	Name    string    // filter name (for logging/debugging)
+	Match   string    // tokenized prefix pattern, e.g. "git status"
+	Compact string    // optional shell command that receives raw output on stdin
+	Ops     FilterOps // declarative transformations, applied after Compact
 }
 
 // ScriptFilter wraps a ScriptFilterDef into a Filter function.
@@ -23,13 +26,18 @@ func ScriptFilter(def ScriptFilterDef) Filter {
 			raw = stdout + "\n" + stderr
 		}
 
-		out, err := runScript(def.Compact, raw)
-		if err != nil {
-			// Script failed -- return raw output rather than losing data
-			return strings.TrimRight(raw, "\n")
+		text := raw
+		if def.Compact != "" {
+			out, err := runScript(def.Compact, raw)
+			if err != nil {
+				// Script failed -- return raw output rather than losing data
+				return strings.TrimRight(raw, "\n")
+			}
+			text = out
 		}
 
-		return strings.TrimRight(out, "\n")
+		text = def.Ops.Apply(strings.TrimRight(text, "\n"))
+		return strings.TrimRight(text, "\n")
 	}
 }
 
@@ -57,12 +65,13 @@ func runScript(script, input string) (string, error) {
 
 // RegisterScriptFilters adds script-based filters to the registry.
 // Called with filters from extensions (~/.banish/ext/) and BANISH manifest.
-// Script filters have highest priority -- checked before TOML and Go filters.
+// A filter needs a match pattern and at least one action (shell pipe or ops).
 func (r *Registry) RegisterScriptFilters(filters []ScriptFilterDef) {
 	for _, f := range filters {
-		if f.Match == "" || f.Compact == "" {
+		if f.Match == "" || (f.Compact == "" && f.Ops.IsZero()) {
 			continue
 		}
 		r.scriptFilters = append(r.scriptFilters, f)
 	}
+	r.sorted = false
 }

@@ -12,10 +12,31 @@ import (
 type freqRecord struct {
 	Command   string    `json:"cmd"`
 	Count     int       `json:"n"`
-	TokenCost int64     `json:"tok"`
+	TokenCost int64     `json:"tok"` // legacy combined input+output, kept for old files
+	InToks    int64     `json:"in,omitempty"`
+	OutToks   int64     `json:"out,omitempty"`
 	RawToks   int64     `json:"raw,omitempty"`   // tokens before compaction
-	SavedToks int64     `json:"saved,omitempty"` // tokens saved by compaction
+	SavedToks int64     `json:"saved,omitempty"` // tokens saved (negative = overhead)
+	Rewrites  int64     `json:"rw,omitempty"`    // commands rewritten pre-exec
 	LastSeen  time.Time `json:"ts"`
+}
+
+// sanitize clamps corrupted token values (overflow from previous versions).
+// SavedToks may legitimately be negative: compaction overhead is real data.
+func (r *freqRecord) sanitize() {
+	clamp := func(v *int64) {
+		if *v < 0 || *v > 1000000000 {
+			*v = 0
+		}
+	}
+	clamp(&r.TokenCost)
+	clamp(&r.InToks)
+	clamp(&r.OutToks)
+	clamp(&r.RawToks)
+	clamp(&r.Rewrites)
+	if r.SavedToks < -1000000000 || r.SavedToks > 1000000000 {
+		r.SavedToks = 0
+	}
 }
 
 // storePath returns the path to the frequency store.
@@ -53,28 +74,26 @@ func (a *Analyzer) LoadFrequency() {
 		if r.LastSeen.Before(cutoff) {
 			continue
 		}
-		// Sanitize corrupted token values (overflow from previous versions)
-		if r.TokenCost < 0 || r.TokenCost > 1000000000 {
-			r.TokenCost = 0
-		}
-		if r.RawToks < 0 || r.RawToks > 1000000000 {
-			r.RawToks = 0
-		}
-		if r.SavedToks < 0 || r.SavedToks > 1000000000 {
-			r.SavedToks = 0
-		}
+		r.sanitize()
 		a.freq[r.Command] += r.Count
 		// Also track base command name
 		if parts := strings.Fields(r.Command); len(parts) > 1 {
 			a.freq[parts[0]] += r.Count
 		}
+		in, out := r.InToks, r.OutToks
+		if in == 0 && out == 0 && r.TokenCost > 0 {
+			// Legacy record: only the combined cost was stored. Attribute it
+			// to output (command strings are tiny next to their output).
+			out = r.TokenCost
+		}
 		a.entries = append(a.entries, Entry{
 			Timestamp:  r.LastSeen,
 			Command:    r.Command,
-			InputToks:  r.TokenCost / 2,
-			OutputToks: r.TokenCost / 2,
+			InputToks:  in,
+			OutputToks: out,
 			RawToks:    r.RawToks,
 			SavedToks:  r.SavedToks,
+			Rewrites:   r.Rewrites,
 			loaded:     true,
 		})
 	}
@@ -100,15 +119,7 @@ func (a *Analyzer) SaveFrequency() {
 	recs := make(map[string]*freqRecord)
 	for i := range existing {
 		r := &existing[i]
-		if r.TokenCost < 0 || r.TokenCost > 1000000000 {
-			r.TokenCost = 0
-		}
-		if r.RawToks < 0 || r.RawToks > 1000000000 {
-			r.RawToks = 0
-		}
-		if r.SavedToks < 0 || r.SavedToks > 1000000000 {
-			r.SavedToks = 0
-		}
+		r.sanitize()
 		recs[r.Command] = r
 	}
 
@@ -130,8 +141,11 @@ func (a *Analyzer) SaveFrequency() {
 		}
 		r.Count++
 		r.TokenCost += e.InputToks + e.OutputToks
+		r.InToks += e.InputToks
+		r.OutToks += e.OutputToks
 		r.RawToks += e.RawToks
 		r.SavedToks += e.SavedToks
+		r.Rewrites += e.Rewrites
 		if e.Timestamp.After(r.LastSeen) {
 			r.LastSeen = e.Timestamp
 		}

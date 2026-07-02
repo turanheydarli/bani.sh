@@ -28,18 +28,11 @@
 !expand exec git branch
 !help "List git branches"
 
-!filter git-status
-!match git status
-!compact "grep -v '^ *$' | grep -v 'use .git' | grep -v 'no changes added' | grep -v 'nothing added' | sed '/^$/d'"
-
-!filter git-log
-!match git log
-!compact "grep -v '^Author:' | grep -v '^Date:' | grep -v '^Merge:' | grep -v '^ *$' | sed 's/^commit \(.\{7\}\).*/\1/' | sed 's/^    //' | head -50"
-
-!filter git-diff
-!match git diff
-!compact "grep -v '^index ' | grep -v '^diff --git' | grep -v '^--- a/' | sed 's/^+++ b/--- /' | head -80"
+# git status/log rewrites and caps ship as embedded defaults;
+# git diff/show condensing is handled by the native diff renderer.
 
 !filter git-branch
 !match git branch
-!compact "sed 's/^  //' | grep -v '^$'"
+!sub "^\* " "* "
+!sub "^  " ""
+!drop "^$"

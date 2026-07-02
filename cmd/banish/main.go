@@ -112,38 +112,31 @@ func execDirect(source string) {
 	}
 
 	if result != nil {
-		outputToks := analyzer.EstimateTokens(result.String())
+		// Measure what actually gets printed (including any JSON envelope)
+		// so savings reflect what the agent reads, not an intermediate form.
+		printed, show := renderOutput(result, flagHuman || interp.Human())
+		outputToks := analyzer.EstimateTokens(printed)
 
+		var saved int64
+		if result.RawTokens > 0 || result.OutTokens > 0 {
+			saved = result.RawTokens - outputToks
+		}
+		rewrites := int64(0)
+		if result.Rewritten != "" {
+			rewrites = 1
+		}
 		tracker.Track(analyzer.Entry{
 			Timestamp:  time.Now(),
 			Command:    source,
 			InputToks:  inputToks,
 			OutputToks: outputToks,
 			RawToks:    result.RawTokens,
-			SavedToks:  result.RawTokens - result.OutTokens,
+			SavedToks:  saved,
+			Rewrites:   rewrites,
 		})
 
-		// Output: if no meta, return raw result (no JSON wrapper).
-		// If meta present, wrap in JSON with metadata.
-		hasMetadata := len(result.Meta) > 0
-		if flagHuman || interp.Human() {
-			fmt.Println(result.String())
-		} else if hasMetadata {
-			b, _ := result.JSON()
-			fmt.Println(string(b))
-		} else {
-			// Pure response -- just the data, no wrapper
-			switch v := result.Data.(type) {
-			case string:
-				if v != "" {
-					fmt.Println(v)
-				}
-			case nil:
-				// nothing
-			default:
-				b, _ := json.Marshal(v)
-				fmt.Println(string(b))
-			}
+		if show {
+			fmt.Println(printed)
 		}
 	}
 
@@ -178,12 +171,50 @@ func isTerminal() bool {
 	return fi.Mode()&os.ModeCharDevice != 0
 }
 
+// renderOutput returns exactly what execDirect/run will print for a result,
+// and whether anything should be printed at all. Keeping rendering and token
+// accounting on the same string means envelope overhead is measured too.
+func renderOutput(result *interpreter.Result, human bool) (string, bool) {
+	if human {
+		return result.String(), true
+	}
+	if len(result.Meta) > 0 {
+		b, _ := result.JSON()
+		return string(b), true
+	}
+	switch v := result.Data.(type) {
+	case string:
+		return v, v != ""
+	case nil:
+		return "", false
+	default:
+		b, _ := json.Marshal(v)
+		return string(b), true
+	}
+}
+
 func newInterpreter() *interpreter.Interpreter {
 	reg := interpreter.NewVerbRegistry()
 	runtime.RegisterBuiltins(reg)
 
-	// Collect script-based filters from extensions and manifest.
+	// Collect filters and rewrites in precedence order: user extensions
+	// first, then project manifest, then embedded defaults. First match
+	// wins among equal-length patterns, so user definitions override.
 	var scriptFilters []compact.ScriptFilterDef
+	var rewrites []compact.RewriteRule
+
+	collectExt := func(loader *extension.Loader) {
+		for _, f := range loader.Filters() {
+			scriptFilters = append(scriptFilters, compact.ScriptFilterDef{
+				Name: f.Name, Match: f.Match, Compact: f.Compact, Ops: f.Ops,
+			})
+		}
+		for _, rw := range loader.Rewrites() {
+			rewrites = append(rewrites, compact.RewriteRule{
+				Name: rw.Name, Match: rw.Match, Unless: rw.Unless, To: rw.To,
+			})
+		}
+	}
 
 	// Load extensions from ~/.banish/ext/
 	home, _ := os.UserHomeDir()
@@ -191,13 +222,7 @@ func newInterpreter() *interpreter.Interpreter {
 		loader := extension.NewLoader()
 		loader.LoadDir(filepath.Join(home, ".banish", "ext"))
 		loader.Register(reg)
-
-		// Collect filters from extensions
-		for _, f := range loader.Filters() {
-			scriptFilters = append(scriptFilters, compact.ScriptFilterDef{
-				Name: f.Name, Match: f.Match, Compact: f.Compact,
-			})
-		}
+		collectExt(loader)
 	}
 
 	// Load BANISH project manifest (walk up from cwd)
@@ -210,18 +235,27 @@ func newInterpreter() *interpreter.Interpreter {
 			for _, v := range bf.Verbs {
 				reg.RegisterExtension(v.Name, extension.MakeVerbHandler(v.Name, v.Expand))
 			}
-			// Collect filters from BANISH manifest
 			for _, f := range bf.Filters {
 				scriptFilters = append(scriptFilters, compact.ScriptFilterDef{
-					Name: f.Name, Match: f.Match, Compact: f.Compact,
+					Name: f.Name, Match: f.Match, Compact: f.Compact, Ops: f.Ops,
+				})
+			}
+			for _, rw := range bf.Rewrites {
+				rewrites = append(rewrites, compact.RewriteRule{
+					Name: rw.Name, Match: rw.Match, Unless: rw.Unless, To: rw.To,
 				})
 			}
 		}
 	}
 
+	// Embedded defaults last: same .bsh DSL, lowest precedence.
+	defaults := extension.NewLoader()
+	defaults.LoadDefaults()
+	collectExt(defaults)
+
 	// System fallback: unknown verbs exec through shell.
 	exec := runtime.NewExecutor()
-	fallback := runtime.FallbackHandler(exec, scriptFilters)
+	fallback := runtime.FallbackHandler(exec, scriptFilters, rewrites)
 	reg.SetFallback(fallback)
 	reg.RegisterBuiltin("__fallback__", fallback)
 

@@ -18,7 +18,8 @@ type Entry struct {
 	InputToks  int64
 	OutputToks int64
 	RawToks    int64  // tokens before compaction
-	SavedToks  int64  // tokens saved by compaction
+	SavedToks  int64  // tokens saved by compaction (negative = overhead)
+	Rewrites   int64  // commands rewritten pre-exec (0 or 1 live; summed when loaded)
 	BashEquiv  int64  // estimated tokens if done in bash
 	Savings    int64  // BashEquiv - InputToks
 	Mode       string // "bsh" or "bash"
@@ -32,21 +33,22 @@ type Entry struct {
 
 // Stats holds aggregate statistics.
 type Stats struct {
-	Commands       int        `json:"commands"`
-	InputTokens    int64      `json:"input_tokens"`
-	OutputTokens   int64      `json:"output_tokens"`
-	RawTokens      int64      `json:"raw_tokens"`
-	SavedTokens    int64      `json:"saved_tokens"`
-	SavingsPct     float64    `json:"savings_pct"`
-	TopVerbs       []VerbStat `json:"top_verbs"`
+	Commands     int        `json:"commands"`
+	InputTokens  int64      `json:"input_tokens"`
+	OutputTokens int64      `json:"output_tokens"`
+	RawTokens    int64      `json:"raw_tokens"`
+	SavedTokens  int64      `json:"saved_tokens"`
+	SavingsPct   float64    `json:"savings_pct"`
+	Rewrites     int64      `json:"rewrites"`
+	TopVerbs     []VerbStat `json:"top_verbs"`
 }
 
 // VerbStat tracks per-verb usage.
 type VerbStat struct {
-	Name     string  `json:"name"`
-	Count    int     `json:"count"`
-	Saved    int64   `json:"saved"`
-	AvgPct   float64 `json:"avg_pct"`
+	Name   string  `json:"name"`
+	Count  int     `json:"count"`
+	Saved  int64   `json:"saved"`
+	AvgPct float64 `json:"avg_pct"`
 }
 
 // Analyzer tracks command execution for token accounting.
@@ -100,6 +102,7 @@ func (a *Analyzer) SessionStats() *Stats {
 		s.OutputTokens += e.OutputToks
 		s.RawTokens += e.RawToks
 		s.SavedTokens += e.SavedToks
+		s.Rewrites += e.Rewrites
 
 		base := normalizeCmd(e.Command)
 		vs, ok := verbMap[base]

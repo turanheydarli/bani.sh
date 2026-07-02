@@ -11,9 +11,10 @@ type Result struct {
 	Meta map[string]any // additional response metadata
 
 	// Internal tracking -- NOT serialized to JSON output.
-	RawTokens int64 // tokens before compaction
-	OutTokens int64 // tokens after compaction
-	SavedPct  int   // savings percentage
+	RawTokens int64  // tokens before compaction
+	OutTokens int64  // tokens after compaction
+	SavedPct  int    // savings percentage
+	Rewritten string // name of the rewrite rule applied pre-exec, if any
 }
 
 // NewResult creates a result with the given data.

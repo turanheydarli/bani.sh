@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"go.bani.sh/banish/internal/ast"
+	"go.bani.sh/banish/internal/compact"
 	"go.bani.sh/banish/internal/lexer"
 	"go.bani.sh/banish/internal/parser"
 )
@@ -20,6 +21,7 @@ type BanishFile struct {
 	Mappings []VerbMapping
 	Verbs    []VerbDef
 	Filters  []FilterDef
+	Rewrites []RewriteDef
 	Config   ProjectConfig
 	Examples []string
 }
@@ -27,8 +29,17 @@ type BanishFile struct {
 // FilterDef is a project-specific output filter.
 type FilterDef struct {
 	Name    string
-	Match   string // command pattern
+	Match   string // tokenized command prefix
 	Compact string // shell command for filtering (receives stdin)
+	Ops     compact.FilterOps
+}
+
+// RewriteDef swaps a command for a machine-readable variant before it runs.
+type RewriteDef struct {
+	Name   string
+	Match  string
+	Unless []string
+	To     string
 }
 
 // ServerDecl declares an MCP server.
@@ -129,8 +140,7 @@ func ParseBanishFile(content string, path string) (*BanishFile, error) {
 				if !ok {
 					break
 				}
-				if prop.Name == "server" || prop.Name == "map" || prop.Name == "verb" ||
-					prop.Name == "config" || prop.Name == "examples" {
+				if isSectionName(prop.Name) {
 					break
 				}
 				val := argsString(prop.Args)
@@ -168,8 +178,7 @@ func ParseBanishFile(content string, path string) (*BanishFile, error) {
 				if !ok {
 					break
 				}
-				if prop.Name == "server" || prop.Name == "map" || prop.Name == "verb" ||
-					prop.Name == "config" || prop.Name == "examples" {
+				if isSectionName(prop.Name) {
 					break
 				}
 				val := argsString(prop.Args)
@@ -192,8 +201,7 @@ func ParseBanishFile(content string, path string) (*BanishFile, error) {
 				if !ok {
 					break
 				}
-				if prop.Name == "server" || prop.Name == "map" || prop.Name == "verb" ||
-					prop.Name == "config" || prop.Name == "examples" {
+				if isSectionName(prop.Name) {
 					break
 				}
 				val := argsString(prop.Args)
@@ -218,19 +226,69 @@ func ParseBanishFile(content string, path string) (*BanishFile, error) {
 				if !ok {
 					break
 				}
-				if prop.Name == "server" || prop.Name == "map" || prop.Name == "verb" ||
-					prop.Name == "filter" || prop.Name == "config" || prop.Name == "examples" {
+				if isSectionName(prop.Name) {
 					break
 				}
-				val := argsString(prop.Args)
+				val := unquotedArgsString(prop.Args)
 				switch prop.Name {
 				case "match":
 					f.Match = val
 				case "compact":
 					f.Compact = val
+				case "drop":
+					f.Ops.Drop = joinRe(f.Ops.Drop, val)
+				case "keep":
+					f.Ops.Keep = joinRe(f.Ops.Keep, val)
+				case "sub":
+					if args := unquotedArgs(prop.Args); len(args) >= 1 {
+						r := compact.SubRule{Pattern: args[0]}
+						if len(args) >= 2 {
+							r.Replace = args[1]
+						}
+						f.Ops.Sub = append(f.Ops.Sub, r)
+					}
+				case "tally":
+					if args := unquotedArgs(prop.Args); len(args) >= 2 {
+						f.Ops.Tally = append(f.Ops.Tally, compact.TallyRule{Pattern: args[0], Template: args[1]})
+					}
+				case "group-by":
+					f.Ops.GroupBy = val
+				case "overflow":
+					f.Ops.Overflow = val
+				case "per-group":
+					f.Ops.PerGroup = atoiSafe(val)
+				case "max-lines":
+					f.Ops.MaxLines = atoiSafe(val)
+				case "max-line-len":
+					f.Ops.MaxLineLen = atoiSafe(val)
 				}
 			}
 			bf.Filters = append(bf.Filters, f)
+
+		case "rewrite":
+			rw := RewriteDef{}
+			if len(dir.Args) >= 1 {
+				rw.Name = dir.Args[0].String()
+			}
+			for j := i + 1; j < len(prog.Statements); j++ {
+				prop, ok := prog.Statements[j].(*ast.Directive)
+				if !ok {
+					break
+				}
+				if isSectionName(prop.Name) {
+					break
+				}
+				val := unquotedArgsString(prop.Args)
+				switch prop.Name {
+				case "match":
+					rw.Match = val
+				case "to":
+					rw.To = val
+				case "unless":
+					rw.Unless = append(rw.Unless, strings.Fields(val)...)
+				}
+			}
+			bf.Rewrites = append(bf.Rewrites, rw)
 
 		case "config":
 			for j := i + 1; j < len(prog.Statements); j++ {
@@ -238,8 +296,7 @@ func ParseBanishFile(content string, path string) (*BanishFile, error) {
 				if !ok {
 					break
 				}
-				if prop.Name == "server" || prop.Name == "map" || prop.Name == "verb" ||
-					prop.Name == "config" || prop.Name == "examples" {
+				if isSectionName(prop.Name) {
 					break
 				}
 				val := strings.Trim(argsString(prop.Args), "\"")
@@ -255,8 +312,7 @@ func ParseBanishFile(content string, path string) (*BanishFile, error) {
 			for j := i + 1; j < len(prog.Statements); j++ {
 				stmt := prog.Statements[j]
 				if d, ok := stmt.(*ast.Directive); ok {
-					if d.Name == "server" || d.Name == "map" || d.Name == "verb" ||
-						d.Name == "config" || d.Name == "examples" {
+					if isSectionName(d.Name) {
 						break
 					}
 				}
@@ -266,6 +322,60 @@ func ParseBanishFile(content string, path string) (*BanishFile, error) {
 	}
 
 	return bf, nil
+}
+
+// isSectionName reports whether a directive starts a new top-level section,
+// ending the lookahead of the section being parsed.
+func isSectionName(name string) bool {
+	switch name {
+	case "server", "map", "verb", "filter", "rewrite", "config", "examples":
+		return true
+	}
+	return false
+}
+
+// unquotedArgs returns each directive arg as its own string, unquoting
+// string literals. Used by two-argument ops like !sub and !tally.
+func unquotedArgs(args []ast.Expression) []string {
+	var parts []string
+	for _, a := range args {
+		if sl, ok := a.(*ast.StringLiteral); ok {
+			parts = append(parts, sl.Value)
+		} else {
+			parts = append(parts, a.String())
+		}
+	}
+	return parts
+}
+
+// unquotedArgsString joins directive args, unquoting string literals so
+// regexes and shell pipes survive intact.
+func unquotedArgsString(args []ast.Expression) string {
+	return strings.Join(unquotedArgs(args), " ")
+}
+
+// joinRe accumulates repeated regex directives into one alternation.
+func joinRe(existing, add string) string {
+	if existing == "" {
+		return add
+	}
+	return existing + "|" + add
+}
+
+// atoiSafe parses a non-negative integer, returning 0 on any error.
+func atoiSafe(s string) int {
+	n := 0
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return 0
+		}
+		n = n*10 + int(c-'0')
+	}
+	return n
 }
 
 func argsString(args []ast.Expression) string {
