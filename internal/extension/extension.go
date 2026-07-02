@@ -15,6 +15,7 @@ import (
 	"go.bani.sh/banish/internal/interpreter"
 	"go.bani.sh/banish/internal/lexer"
 	"go.bani.sh/banish/internal/parser"
+	"go.bani.sh/banish/internal/shell"
 )
 
 // VerbDef is a verb defined in an extension file.
@@ -171,10 +172,11 @@ func makeExtensionHandler(v VerbDef) interpreter.VerbHandler {
 
 		// Strip leading "exec " prefix if present -- it is a hint that
 		// the expansion should run as a shell command.
-		shell := strings.TrimPrefix(expand, "exec ")
+		script := strings.TrimPrefix(expand, "exec ")
 
-		// Execute via shell.
-		c := exec.CommandContext(ctx, "sh", "-c", shell)
+		// Execute via the OS-appropriate shell.
+		name, args := shell.Args(script)
+		c := exec.CommandContext(ctx, name, args...)
 		c.Stderr = os.Stderr
 		out, err := c.Output()
 		if err != nil {

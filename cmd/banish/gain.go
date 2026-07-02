@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -164,6 +165,6 @@ func resetFreqData() error {
 	if home == "" {
 		return fmt.Errorf("cannot determine home directory")
 	}
-	path := home + "/.banish/freq.json"
+	path := filepath.Join(home, ".banish", "freq.json")
 	return os.WriteFile(path, []byte("[]"), 0644)
 }

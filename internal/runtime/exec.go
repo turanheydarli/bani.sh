@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os/exec"
 	"time"
+
+	"go.bani.sh/banish/internal/shell"
 )
 
 // ExecResult holds the output of a subprocess execution.
@@ -97,7 +99,8 @@ func (e *Executor) Run(ctx context.Context, name string, args []string) (*ExecRe
 	return result, nil
 }
 
-// RunShell executes a command string through the system shell.
+// RunShell executes a command string through the OS-appropriate shell.
 func (e *Executor) RunShell(ctx context.Context, command string) (*ExecResult, error) {
-	return e.Run(ctx, "sh", []string{"-c", command})
+	name, args := shell.Args(command)
+	return e.Run(ctx, name, args)
 }

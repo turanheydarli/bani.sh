@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"os/exec"
 	"strings"
+
+	"go.bani.sh/banish/internal/shell"
 )
 
 // ScriptFilterDef defines a filter that pipes output through a shell command.
@@ -33,7 +35,8 @@ func ScriptFilter(def ScriptFilterDef) Filter {
 
 // runScript executes a shell command with input piped to stdin.
 func runScript(script, input string) (string, error) {
-	cmd := exec.Command("sh", "-c", script)
+	name, args := shell.Args(script)
+	cmd := exec.Command(name, args...)
 	cmd.Stdin = strings.NewReader(input)
 
 	var stdout, stderr bytes.Buffer
