@@ -98,7 +98,7 @@ def build_payload():
         fields.append({"name": "Shipped by", "value": value})
 
     # Links (zero-width field name keeps the row clean). Install points at the
-    # README install section, which is live today; switch to https://bani.sh once
+    # README install section, which is live today; switch to https://banish.sh once
     # the site ships.
     links = [
         "[Release notes]({})".format(release_url),
@@ -116,7 +116,7 @@ def build_payload():
         "description": desc,
         "fields": fields,
         "thumbnail": {"url": asset("mascot-ghost.png")},
-        "footer": {"text": "banish \u00b7 MIT \u00b7 bani.sh", "icon_url": asset("favicon.png")},
+        "footer": {"text": "banish \u00b7 MIT \u00b7 banish.sh", "icon_url": asset("favicon.png")},
     }
 
     payload = {

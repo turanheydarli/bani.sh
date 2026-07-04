@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/compact"
-	"go.bani.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/compact"
+	"go.banish.sh/banish/internal/interpreter"
 )
 
 // FallbackHandler returns a VerbHandler that executes unknown verbs as OS

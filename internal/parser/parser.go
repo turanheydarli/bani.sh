@@ -5,9 +5,9 @@ package parser
 import (
 	"fmt"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/lexer"
-	"go.bani.sh/banish/internal/token"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/lexer"
+	"go.banish.sh/banish/internal/token"
 )
 
 // Parser consumes tokens from a lexer and produces an AST.

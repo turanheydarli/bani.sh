@@ -3,8 +3,8 @@ package parser
 import (
 	"testing"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/lexer"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/lexer"
 )
 
 func parse(t *testing.T, input string) *ast.Program {

@@ -11,12 +11,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/analyzer"
-	"go.bani.sh/banish/internal/compact"
-	"go.bani.sh/banish/internal/extension"
-	"go.bani.sh/banish/internal/interpreter"
-	"go.bani.sh/banish/internal/manifest"
-	"go.bani.sh/banish/internal/runtime"
+	"go.banish.sh/banish/internal/analyzer"
+	"go.banish.sh/banish/internal/compact"
+	"go.banish.sh/banish/internal/extension"
+	"go.banish.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/manifest"
+	"go.banish.sh/banish/internal/runtime"
 )
 
 var version = "dev"

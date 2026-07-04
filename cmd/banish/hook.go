@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/permissions"
+	"go.banish.sh/banish/internal/permissions"
 )
 
 // hookCmd is the PreToolUse hook entry point. It reads the tool input JSON from

@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/compact"
-	"go.bani.sh/banish/internal/lexer"
-	"go.bani.sh/banish/internal/parser"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/compact"
+	"go.banish.sh/banish/internal/lexer"
+	"go.banish.sh/banish/internal/parser"
 )
 
 // BanishFile represents a parsed BANISH project manifest.

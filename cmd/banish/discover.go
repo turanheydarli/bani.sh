@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/history"
+	"go.banish.sh/banish/internal/history"
 )
 
 // nonFilterable are base commands that are stateful or trivial, so a compaction

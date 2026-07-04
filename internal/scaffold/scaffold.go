@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.bani.sh/banish/internal/extension"
+	"go.banish.sh/banish/internal/extension"
 )
 
 // InitProject creates a starter BANISH file in the given directory.

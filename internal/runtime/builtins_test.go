@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/interpreter"
-	"go.bani.sh/banish/internal/token"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/token"
 )
 
 func cmd(verb string, target string, mods ...string) *ast.Command {

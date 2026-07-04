@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/analyzer"
+	"go.banish.sh/banish/internal/analyzer"
 )
 
 // defaultPricePerMTok is the cost in USD per million input tokens used to

@@ -1,4 +1,4 @@
-module go.bani.sh/banish
+module go.banish.sh/banish
 
 go 1.26.4
 

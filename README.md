@@ -5,7 +5,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-dark.svg" />
-    <img src="assets/wordmark-light.svg" width="172" alt="bani.sh" />
+    <img src="assets/wordmark-light.svg" width="172" alt="banish.sh" />
   </picture>
 </p>
 
@@ -37,7 +37,7 @@ running total.
 banish is a single Go binary. Install it with:
 
 ```sh
-go install go.bani.sh/banish/cmd/banish@latest
+go install go.banish.sh/banish/cmd/banish@latest
 ```
 
 Then wire it into your agent with one command:

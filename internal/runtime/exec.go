@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"time"
 
-	"go.bani.sh/banish/internal/shell"
+	"go.banish.sh/banish/internal/shell"
 )
 
 // ExecResult holds the output of a subprocess execution.

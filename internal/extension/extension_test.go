@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/interpreter"
 )
 
 func TestLoadFile(t *testing.T) {

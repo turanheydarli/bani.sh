@@ -3,7 +3,7 @@ package ast
 import (
 	"testing"
 
-	"go.bani.sh/banish/internal/token"
+	"go.banish.sh/banish/internal/token"
 )
 
 func TestProgramString(t *testing.T) {
