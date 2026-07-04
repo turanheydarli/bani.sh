@@ -3,8 +3,8 @@ package interpreter
 import (
 	"strings"
 
-	"go.bani.sh/banish/internal/lexer"
-	"go.bani.sh/banish/internal/parser"
+	"go.banish.sh/banish/internal/lexer"
+	"go.banish.sh/banish/internal/parser"
 )
 
 // InputMode indicates whether input was detected as .bsh or bash.

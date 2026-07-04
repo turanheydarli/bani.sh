@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/lexer"
-	"go.bani.sh/banish/internal/parser"
+	"go.banish.sh/banish/internal/lexer"
+	"go.banish.sh/banish/internal/parser"
 )
 
 func checkCmd() *cobra.Command {

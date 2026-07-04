@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/token"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/token"
 )
 
 // evalPipeline executes a pipeline of commands connected by operators.

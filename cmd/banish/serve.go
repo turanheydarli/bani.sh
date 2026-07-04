@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/mcp"
+	"go.banish.sh/banish/internal/mcp"
 )
 
 func serveCmd() *cobra.Command {

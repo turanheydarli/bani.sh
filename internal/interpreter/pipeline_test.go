@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/lexer"
-	"go.bani.sh/banish/internal/parser"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/lexer"
+	"go.banish.sh/banish/internal/parser"
 )
 
 func setupPipeline(t *testing.T) *Interpreter {

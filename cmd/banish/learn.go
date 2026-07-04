@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/history"
+	"go.banish.sh/banish/internal/history"
 )
 
 // lookAhead is how many later commands in the same session count as a possible

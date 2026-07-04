@@ -2,7 +2,7 @@
 // from .bsh source bytes.
 package lexer
 
-import "go.bani.sh/banish/internal/token"
+import "go.banish.sh/banish/internal/token"
 
 // Lexer reads source bytes and produces tokens.
 type Lexer struct {

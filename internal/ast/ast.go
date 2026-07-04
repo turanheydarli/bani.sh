@@ -5,7 +5,7 @@ package ast
 import (
 	"strings"
 
-	"go.bani.sh/banish/internal/token"
+	"go.banish.sh/banish/internal/token"
 )
 
 // Node is the interface implemented by all AST nodes.

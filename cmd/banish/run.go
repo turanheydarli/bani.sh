@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/analyzer"
+	"go.banish.sh/banish/internal/analyzer"
 )
 
 func runCmd() *cobra.Command {

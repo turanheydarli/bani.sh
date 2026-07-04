@@ -12,12 +12,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/compact"
-	"go.bani.sh/banish/internal/interpreter"
-	"go.bani.sh/banish/internal/lexer"
-	"go.bani.sh/banish/internal/parser"
-	"go.bani.sh/banish/internal/shell"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/compact"
+	"go.banish.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/lexer"
+	"go.banish.sh/banish/internal/parser"
+	"go.banish.sh/banish/internal/shell"
 )
 
 // VerbDef is a verb defined in an extension file.

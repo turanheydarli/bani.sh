@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"go.bani.sh/banish/internal/scaffold"
+	"go.banish.sh/banish/internal/scaffold"
 )
 
 func initCmd() *cobra.Command {

@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"go.bani.sh/banish/internal/shell"
+	"go.banish.sh/banish/internal/shell"
 )
 
 // ScriptFilterDef defines a .bsh output filter: an optional shell pipe

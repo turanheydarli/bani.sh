@@ -8,9 +8,9 @@ import (
 	"io"
 	"os"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/lexer"
-	"go.bani.sh/banish/internal/parser"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/lexer"
+	"go.banish.sh/banish/internal/parser"
 )
 
 // Interpreter walks an AST and executes commands.

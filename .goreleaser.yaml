@@ -26,7 +26,7 @@ checksum:
 nfpms:
   - package_name: banish
     vendor: banish
-    homepage: "https://bani.sh"
+    homepage: "https://banish.sh"
     maintainer: "Turan Heydarli <turanheyder91@gmail.com>"
     description: "Token-optimized middleware for LLM coding agents."
     license: MIT
@@ -45,7 +45,7 @@ homebrew_casks:
     # HOMEBREW_TAP_TOKEN secret (a PAT with contents:write on that repo). Without
     # the token the cask is generated but not pushed, so releases stay green.
     skip_upload: '{{ if eq (envOrDefault "HOMEBREW_TAP_TOKEN" "") "" }}true{{ else }}false{{ end }}'
-    homepage: "https://bani.sh"
+    homepage: "https://banish.sh"
     description: "Token-optimized middleware for LLM coding agents."
     # Unsigned binary: clear the macOS quarantine flag on install.
     hooks:

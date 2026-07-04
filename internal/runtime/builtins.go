@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"go.bani.sh/banish/internal/ast"
-	"go.bani.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/interpreter"
 )
 
 // RegisterBuiltins registers all core verbs into the registry.

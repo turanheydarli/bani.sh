@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.bani.sh/banish/internal/ast"
+	"go.banish.sh/banish/internal/ast"
 )
 
 // VerbHandler is the function signature for verb implementations.

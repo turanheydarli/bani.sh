@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"go.bani.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/interpreter"
 )
 
 // Server exposes banish verbs as MCP tools via JSON-RPC over stdio.
