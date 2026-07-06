@@ -106,10 +106,12 @@ func (s *Server) handleToolsCall(ctx context.Context, req *Request) *Response {
 		}
 	} else {
 		cmd = verb
-		// First positional arg (e.g. "path" for ls/read)
+		// First positional arg (e.g. "path" for ls/read). Quote it so values that
+		// contain the modifier separator ':' - notably URLs like https://host - are
+		// parsed as a single string target instead of a key:value modifier.
 		for _, key := range []string{"path", "url", "target", "name"} {
 			if v, ok := params.Arguments[key]; ok {
-				cmd += fmt.Sprintf(" %v", v)
+				cmd += fmt.Sprintf(" %q", fmt.Sprintf("%v", v))
 				delete(params.Arguments, key)
 				break
 			}

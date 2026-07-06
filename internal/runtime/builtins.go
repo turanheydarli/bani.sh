@@ -44,12 +44,24 @@ func modVal(cmd *ast.Command, key string) string {
 	return ""
 }
 
-// target returns the target string from the command, or empty.
+// target returns the target's raw value, or empty. It unwraps literal nodes so
+// callers get the underlying value (e.g. a URL) rather than the re-serialized
+// form: StringLiteral.String() re-adds surrounding quotes, which would corrupt a
+// quoted argument like "https://example.com".
 func target(cmd *ast.Command) string {
 	if cmd.Target == nil {
 		return ""
 	}
-	return cmd.Target.String()
+	switch t := cmd.Target.(type) {
+	case *ast.StringLiteral:
+		return t.Value
+	case *ast.Identifier:
+		return t.Value
+	case *ast.NumberLiteral:
+		return t.Value
+	default:
+		return cmd.Target.String()
+	}
 }
 
 // =========================================================================

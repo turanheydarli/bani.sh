@@ -83,7 +83,10 @@ func FindBanishFile(dir string) string {
 
 	for {
 		candidate := filepath.Join(abs, "BANISH")
-		if _, err := os.Stat(candidate); err == nil {
+		// A manifest must be a regular file. A directory (or socket, fifo, ...)
+		// named BANISH is not a match: skip it and keep walking up, exactly as
+		// if nothing was found at this level.
+		if info, err := os.Stat(candidate); err == nil && info.Mode().IsRegular() {
 			return candidate
 		}
 
@@ -102,6 +105,16 @@ func FindBanishFile(dir string) string {
 
 // LoadBanishFile parses a BANISH file and returns its contents.
 func LoadBanishFile(path string) (*BanishFile, error) {
+	// Guard against callers passing a non-regular file (FindBanishFile already
+	// filters these; this keeps other entry points from repeating the mistake).
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("manifest.Load: %w", err)
+	}
+	if !info.Mode().IsRegular() {
+		return nil, fmt.Errorf("manifest.Load: %s is not a regular file", path)
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("manifest.Load: %w", err)
