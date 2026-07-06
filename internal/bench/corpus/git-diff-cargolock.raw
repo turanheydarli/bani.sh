@@ -1,0 +1,55 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index a1b2c3d..e4f5g6h 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -3,25 +3,32 @@
+ version = 3
+
+ [[package]]
++name = "anyhow"
++version = "1.0.75"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "abcd1234"
++
++[[package]]
+ name = "serde"
+-version = "1.0.150"
++version = "1.0.160"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "old-serde-hash"
++checksum = "new-serde-hash"
+ dependencies = [
+  "serde_derive",
+ ]
+
+ [[package]]
+ name = "serde_derive"
+-version = "1.0.150"
++version = "1.0.160"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "old-derive-hash"
++checksum = "new-derive-hash"
+ dependencies = [
+  "proc-macro2",
+  "quote",
+  "syn",
+ ]
+
+ [[package]]
+-name = "old-crate"
+-version = "0.1.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "removed"
+-
+-[[package]]
+ name = "tokio"
+-version = "1.28.0"
++version = "1.35.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "old-tokio-hash"
++checksum = "new-tokio-hash"
+ dependencies = [
+  "bytes",
+  "libc",
+  "mio",
+ ]

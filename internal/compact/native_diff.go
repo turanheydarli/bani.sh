@@ -3,6 +3,8 @@ package compact
 import (
 	"fmt"
 	"strings"
+
+	"go.banish.sh/banish/internal/compact/lockfile"
 )
 
 const (
@@ -30,6 +32,7 @@ func renderGitDiff(stdout, stderr string, exitCode int) (string, bool) {
 		switch {
 		case strings.HasPrefix(l, "diff --git "):
 			cur = &fileDiff{path: parseDiffPath(l)}
+			cur.lockfile = lockfile.Match(cur.path) != ""
 			files = append(files, cur)
 		case strings.HasPrefix(l, "index ") || strings.HasPrefix(l, "--- ") ||
 			strings.HasPrefix(l, "new file mode") || strings.HasPrefix(l, "deleted file mode") ||
@@ -42,6 +45,7 @@ func renderGitDiff(stdout, stderr string, exitCode int) (string, bool) {
 			if cur != nil {
 				if p := strings.TrimPrefix(l, "+++ b/"); p != l {
 					cur.path = p
+					cur.lockfile = lockfile.Match(cur.path) != ""
 				}
 			}
 		case strings.HasPrefix(l, "@@ "):
@@ -53,20 +57,43 @@ func renderGitDiff(stdout, stderr string, exitCode int) (string, bool) {
 		case strings.HasPrefix(l, "+"):
 			if cur != nil {
 				cur.adds++
+				cur.rememberHunkLine(l)
 				cur.appendLine(l, diffMaxLinesPerFile)
 			}
 		case strings.HasPrefix(l, "-"):
 			if cur != nil {
 				cur.dels++
+				cur.rememberHunkLine(l)
 				cur.appendLine(l, diffMaxLinesPerFile)
 			}
+		case strings.HasPrefix(l, " "):
+			// Context lines are dropped from the compact body but preserved
+			// for lockfile parsers, which rely on unchanged "name" lines to
+			// attribute a bumped "version" line to the right package.
+			if cur != nil {
+				cur.rememberHunkLine(l)
+			}
 		default:
-			// context line, drop
+			// unknown line class, drop
 		}
 	}
 
 	if len(files) == 0 {
 		return "", false
+	}
+
+	// Second pass: replace each lockfile file's body with a semantic summary.
+	// Parsers degrade gracefully — ok=false leaves the raw diff body in place.
+	for _, f := range files {
+		if !f.lockfile {
+			continue
+		}
+		summary, ok := lockfile.Render(f.path, f.hunkLines)
+		if !ok {
+			continue
+		}
+		f.body = strings.Split(summary, "\n")
+		f.omitted = 0
 	}
 
 	var out []string
@@ -88,13 +115,18 @@ func renderGitDiff(stdout, stderr string, exitCode int) (string, bool) {
 	return strings.Join(out, "\n"), true
 }
 
-// fileDiff accumulates the condensed body of one file's diff.
+// fileDiff accumulates the condensed body of one file's diff. hunkLines
+// buffers the raw hunk stream (with sigils) for lockfile files, which need
+// context to attribute version changes to the right package. For non-lockfile
+// files hunkLines stays nil so we do not pay the allocation.
 type fileDiff struct {
-	path    string
-	adds    int
-	dels    int
-	body    []string
-	omitted int
+	path      string
+	adds      int
+	dels      int
+	body      []string
+	omitted   int
+	lockfile  bool
+	hunkLines []string
 }
 
 // appendLine adds a body line, counting overflow past the per-file cap.
@@ -104,6 +136,16 @@ func (f *fileDiff) appendLine(l string, max int) {
 	} else {
 		f.omitted++
 	}
+}
+
+// rememberHunkLine buffers a raw hunk line (including its diff sigil) so a
+// downstream lockfile parser can walk the +, -, and context stream. No-op for
+// non-lockfile files so raw diffs remain O(compact-body).
+func (f *fileDiff) rememberHunkLine(l string) {
+	if !f.lockfile {
+		return
+	}
+	f.hunkLines = append(f.hunkLines, l)
 }
 
 // parseDiffPath extracts the b/ path from a "diff --git a/x b/x" line.

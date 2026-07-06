@@ -1,0 +1,6 @@
+=== yarn.lock +20 -12
+(semantic diff via banish)
+  + added:    cors@2.8.5, typescript@5.4.0
+  ↑ upgraded: @types/node 20.0.0 → 20.11.0, express 4.19.0 → 4.19.2
+  - removed:  lodash@4.17.21
+  [set BANISH_LOCKFILE_FULL=1 for the raw diff]

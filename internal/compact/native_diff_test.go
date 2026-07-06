@@ -82,6 +82,91 @@ func TestRegistryCompactCascade(t *testing.T) {
 	}
 }
 
+// TestRenderGitDiffLockfileSummary asserts a lockfile diff surfaces as the
+// semantic package-level summary rather than the raw hunk lines.
+func TestRenderGitDiffLockfileSummary(t *testing.T) {
+	diff := `diff --git a/package-lock.json b/package-lock.json
+index abc..def 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -100,7 +100,7 @@
+     "node_modules/express": {
+-      "version": "4.19.0",
++      "version": "4.19.2",
+       "resolved": "https://..."
+`
+	out, ok := renderGitDiff(diff, "", 0)
+	if !ok {
+		t.Fatal("renderGitDiff ok=false")
+	}
+	for _, want := range []string{
+		"=== package-lock.json",
+		"semantic diff via banish",
+		"express 4.19.0 → 4.19.2",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q in:\n%s", want, out)
+		}
+	}
+	// Raw version lines must not survive; that is the entire point.
+	if strings.Contains(out, `"version": "4.19.0"`) {
+		t.Errorf("raw version line leaked through:\n%s", out)
+	}
+}
+
+// TestRenderGitDiffLockfileEnvOverride asserts BANISH_LOCKFILE_FULL=1 falls
+// back to the raw diff renderer (parser opts out, body stays as-is).
+func TestRenderGitDiffLockfileEnvOverride(t *testing.T) {
+	t.Setenv("BANISH_LOCKFILE_FULL", "1")
+	diff := `diff --git a/package-lock.json b/package-lock.json
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -100,7 +100,7 @@
+-      "version": "4.19.0",
++      "version": "4.19.2",
+`
+	out, ok := renderGitDiff(diff, "", 0)
+	if !ok {
+		t.Fatal("renderGitDiff ok=false")
+	}
+	if strings.Contains(out, "semantic diff via banish") {
+		t.Errorf("BANISH_LOCKFILE_FULL should suppress summary:\n%s", out)
+	}
+	if !strings.Contains(out, `"version": "4.19.2"`) {
+		t.Errorf("raw diff should pass through:\n%s", out)
+	}
+}
+
+// TestRenderGitDiffMixedFiles asserts lockfile compaction is per-file: a
+// non-lockfile in the same diff still gets normal condensed rendering.
+func TestRenderGitDiffMixedFiles(t *testing.T) {
+	diff := `diff --git a/src/foo.go b/src/foo.go
+--- a/src/foo.go
++++ b/src/foo.go
+@@ -1,3 +1,3 @@
+-old := 1
++new := 1
+diff --git a/go.sum b/go.sum
+--- a/go.sum
++++ b/go.sum
+@@ -1,2 +1,2 @@
+-github.com/foo/bar v1.0.0 h1:aaa=
+-github.com/foo/bar v1.0.0/go.mod h1:bbb=
++github.com/foo/bar v1.1.0 h1:ccc=
++github.com/foo/bar v1.1.0/go.mod h1:ddd=
+`
+	out, ok := renderGitDiff(diff, "", 0)
+	if !ok {
+		t.Fatal("renderGitDiff ok=false")
+	}
+	if !strings.Contains(out, "=== src/foo.go") || !strings.Contains(out, "-old := 1") {
+		t.Errorf("non-lockfile file lost normal rendering:\n%s", out)
+	}
+	if !strings.Contains(out, "github.com/foo/bar v1.0.0 → v1.1.0") {
+		t.Errorf("go.sum did not get semantic summary:\n%s", out)
+	}
+}
+
 func TestRegistryLongestPatternWins(t *testing.T) {
 	r := NewRegistry()
 	r.RegisterScriptFilters([]ScriptFilterDef{
