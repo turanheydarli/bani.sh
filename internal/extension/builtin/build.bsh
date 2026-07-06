@@ -1,0 +1,29 @@
+!extension build v:1.0
+
+# make recipes echo arbitrary commands, so drop known noise rather than
+# keep-only; errors and warnings always pass through.
+
+!filter make
+!match make
+!tally "^\s*(cc|gcc|g\+\+|clang|clang\+\+|c\+\+)\s" "== {n} compile commands"
+!drop "^\s*(cc|gcc|g\+\+|clang|clang\+\+|c\+\+)\s"
+!drop "^make(\[\d+\])?: (Entering|Leaving) directory"
+!drop "^$"
+!max-lines 60
+!overflow "+{n} more lines"
+
+!filter cmake
+!match cmake
+!tally "^-- " "== {n} config lines"
+!drop "^-- "
+!drop "^$"
+!max-lines 40
+!overflow "+{n} more lines"
+
+!filter ninja
+!match ninja
+!tally "^\[\d+/\d+\]" "== {n} build steps"
+!drop "^\[\d+/\d+\]"
+!drop "^$"
+!max-lines 40
+!overflow "+{n} more lines"

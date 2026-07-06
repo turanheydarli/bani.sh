@@ -89,9 +89,13 @@ Measured savings on common commands:
 | `ls -la` (14 entries) | 245 tok | 29 tok | 87% |
 | `npm install` | ~200 tok | 5 tok | ~97% |
 | `cargo build` (success) | ~150 tok | `cargo build: ok` (4 tok) | 97% |
+| `make` (20 files) | ~390 tok | `== 21 compile commands` (5 tok) | 98% |
+| `jest` (12 suites pass) | ~168 tok | 37 tok | 77% |
+| `dotnet build` | ~96 tok | 23 tok | 76% |
 
 Ships with filters for git, docker, kubectl, npm/yarn/pnpm, cargo, maven, gradle,
-pytest, terraform, and aws. Add your own with a `.bsh` file - no recompile.
+pytest, terraform, aws, gh, make/cmake/ninja, jest/vitest/eslint/tsc, and dotnet.
+Add your own with a `.bsh` file - no recompile.
 
 ## Contributing
 
