@@ -19,6 +19,53 @@ jobs:
           cache: true
       - run: go test -race -count=1 ./...
 
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: enforce savings thresholds
+        run: go run ./cmd/banish bench --check
+      - name: publish savings table to job summary
+        run: |
+          {
+            echo "## Token savings (bench corpus)"
+            echo '```'
+            go run ./cmd/banish bench
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+  # After a merge, refresh the README savings table from the corpus so the
+  # published numbers always match what the pipeline measures. Contributors
+  # never need to regenerate the table in their PRs.
+  update-readme:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, bench]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: refresh README savings table
+        run: go run ./cmd/banish bench --write-readme README.md
+      - name: commit if changed
+        run: |
+          if git diff --quiet README.md; then
+            echo "README savings table already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore: refresh README savings table"
+          git push
+
   lint:
     runs-on: ubuntu-latest
     steps:

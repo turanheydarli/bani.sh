@@ -1,0 +1,23 @@
+make: Entering directory '/src/app'
+cc -O2 -Wall -Wextra -c -o src/obj/file00.o src/file00.c
+cc -O2 -Wall -Wextra -c -o src/obj/file01.o src/file01.c
+cc -O2 -Wall -Wextra -c -o src/obj/file02.o src/file02.c
+cc -O2 -Wall -Wextra -c -o src/obj/file03.o src/file03.c
+cc -O2 -Wall -Wextra -c -o src/obj/file04.o src/file04.c
+cc -O2 -Wall -Wextra -c -o src/obj/file05.o src/file05.c
+cc -O2 -Wall -Wextra -c -o src/obj/file06.o src/file06.c
+cc -O2 -Wall -Wextra -c -o src/obj/file07.o src/file07.c
+cc -O2 -Wall -Wextra -c -o src/obj/file08.o src/file08.c
+cc -O2 -Wall -Wextra -c -o src/obj/file09.o src/file09.c
+cc -O2 -Wall -Wextra -c -o src/obj/file10.o src/file10.c
+cc -O2 -Wall -Wextra -c -o src/obj/file11.o src/file11.c
+cc -O2 -Wall -Wextra -c -o src/obj/file12.o src/file12.c
+cc -O2 -Wall -Wextra -c -o src/obj/file13.o src/file13.c
+cc -O2 -Wall -Wextra -c -o src/obj/file14.o src/file14.c
+cc -O2 -Wall -Wextra -c -o src/obj/file15.o src/file15.c
+cc -O2 -Wall -Wextra -c -o src/obj/file16.o src/file16.c
+cc -O2 -Wall -Wextra -c -o src/obj/file17.o src/file17.c
+cc -O2 -Wall -Wextra -c -o src/obj/file18.o src/file18.c
+cc -O2 -Wall -Wextra -c -o src/obj/file19.o src/file19.c
+cc -o app src/obj/file00.o src/obj/file01.o src/obj/file02.o src/obj/file03.o src/obj/file04.o src/obj/file05.o src/obj/file06.o src/obj/file07.o src/obj/file08.o src/obj/file09.o src/obj/file10.o src/obj/file11.o src/obj/file12.o src/obj/file13.o src/obj/file14.o src/obj/file15.o src/obj/file16.o src/obj/file17.o src/obj/file18.o src/obj/file19.o
+make: Leaving directory '/src/app'

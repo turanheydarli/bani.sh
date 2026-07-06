@@ -1,0 +1,20 @@
+  Passed TestCase01 [4 ms]
+  Passed TestCase02 [5 ms]
+  Passed TestCase03 [6 ms]
+  Passed TestCase04 [7 ms]
+  Passed TestCase05 [8 ms]
+  Passed TestCase06 [9 ms]
+  Passed TestCase07 [10 ms]
+  Passed TestCase08 [11 ms]
+  Passed TestCase09 [12 ms]
+  Passed TestCase10 [13 ms]
+  Passed TestCase11 [14 ms]
+  Passed TestCase12 [15 ms]
+  Passed TestCase13 [16 ms]
+  Passed TestCase14 [17 ms]
+  Failed TestMul [5 ms]
+  Error Message:
+   Assert.Equal() Failure
+   Expected: 42
+   Actual:   41
+Failed!  - Failed:     1, Passed:    14, Skipped:     0, Total:    15

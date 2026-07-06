@@ -1,0 +1,5 @@
+src/main.c:12:5: error: expected ';' before 'return'
+   12 |     return 0
+      |     ^~~~~~
+make: *** [Makefile:8: src/obj/main.o] Error 1
+== 1 compile commands

@@ -1,0 +1,34 @@
+diff --git a/internal/compact/ops.go b/internal/compact/ops.go
+index 3f1c2aa..9b04d11 100644
+--- a/internal/compact/ops.go
++++ b/internal/compact/ops.go
+@@ -49,6 +49,9 @@ func (o FilterOps) Apply(text string) string {
+ 	if o.IsZero() || text == "" {
+ 		return text
+ 	}
++	if o.MaxLines < 0 {
++		return text
++	}
+ 	lines := strings.Split(text, "\n")
+
+ 	tallies := o.countTallies(lines)
+@@ -68,7 +71,7 @@ func (o FilterOps) Apply(text string) string {
+ 	if o.MaxLines > 0 && len(lines) > o.MaxLines {
+ 		omitted := len(lines) - o.MaxLines
+-		lines = append(lines[:o.MaxLines], o.overflowMarker(omitted))
++		lines = append(lines[:o.MaxLines], o.marker(omitted))
+ 	}
+
+ 	lines = append(lines, tallies...)
+diff --git a/internal/compact/compact.go b/internal/compact/compact.go
+index 88f01ce..1d2b3c4 100644
+--- a/internal/compact/compact.go
++++ b/internal/compact/compact.go
+@@ -24,6 +24,7 @@ func NewRegistry() *Registry {
+ 	return &Registry{}
+ }
+
++// Compact runs the full output cascade for cmdline.
+ func (r *Registry) Compact(cmdline, stdout, stderr string, exitCode int) (string, string) {
+ 	words := Tokenize(cmdline)
+ 
