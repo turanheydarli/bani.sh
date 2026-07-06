@@ -27,3 +27,21 @@ jobs:
           # Optional: set this secret (PAT with contents:write on
           # turanheydarli/homebrew-tap) to publish the Homebrew formula.
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      # The generated notes quote commit subjects verbatim. A subject containing
+      # "@word" renders as a real mention, and GitHub then lists the mentioned
+      # account under the release's Contributors - a stray "@handles" in a commit
+      # message credits an unrelated user. Wrap mentions in backticks so they
+      # render as code, not mentions.
+      - name: Escape at-mentions in release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          body=$(gh release view "$TAG" --json body --jq .body)
+          escaped=$(printf '%s' "$body" | sed -E 's/(^|[[:space:](])@([A-Za-z0-9][A-Za-z0-9-]*)/\1`@\2`/g')
+          if [ "$escaped" != "$body" ]; then
+            printf '%s' "$escaped" | gh release edit "$TAG" --notes-file -
+            echo "escaped at-mentions in $TAG release notes"
+          fi
