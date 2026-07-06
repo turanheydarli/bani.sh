@@ -251,6 +251,8 @@
   ],
   "readme": true,
   "group": "JSON-preferred (kubectl / gh)"
+ },
+ {
   "name": "git-diff-packagelock",
   "display": "git diff package-lock.json",
   "command": "git diff",
