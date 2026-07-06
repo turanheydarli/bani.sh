@@ -18,8 +18,32 @@ jobs:
           go-version-file: go.mod
           cache: true
       - run: go test -race -count=1 ./...
-      - name: token savings report
+
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: enforce savings thresholds
         run: go run ./cmd/banish bench --check
+      - name: publish savings table to job summary
+        run: |
+          {
+            echo "## Token savings (bench corpus)"
+            echo '```'
+            go run ./cmd/banish bench
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: check README savings table is fresh
+        run: |
+          go run ./cmd/banish bench --write-readme README.md
+          if ! git diff --exit-code README.md; then
+            echo "::error::README savings table is stale. Run: go run ./cmd/banish bench --write-readme README.md" >&2
+            exit 1
+          fi
 
   lint:
     runs-on: ubuntu-latest
