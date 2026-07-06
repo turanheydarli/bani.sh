@@ -6,6 +6,33 @@ import (
 	"go.banish.sh/banish/internal/token"
 )
 
+func TestRawValue(t *testing.T) {
+	cases := []struct {
+		name string
+		expr Expression
+		want string
+	}{
+		{"string literal unquoted", &StringLiteral{Value: `https://x?a=1`}, `https://x?a=1`},
+		{"string literal with quote", &StringLiteral{Value: `a"b`}, `a"b`},
+		{"identifier", &Identifier{Value: "deploy"}, "deploy"},
+		{"number", &NumberLiteral{Value: "42"}, "42"},
+		{"path", &PathLiteral{Value: "/var/log"}, "/var/log"},
+		{"glob", &GlobLiteral{Value: "*.go"}, "*.go"},
+		{"nil", nil, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := RawValue(c.expr); got != c.want {
+				t.Errorf("RawValue = %q, want %q", got, c.want)
+			}
+		})
+	}
+	// A StringLiteral must NOT come back with the surrounding quotes String() adds.
+	if got := RawValue(&StringLiteral{Value: "x"}); got == (&StringLiteral{Value: "x"}).String() {
+		t.Errorf("RawValue returned the re-serialized form %q", got)
+	}
+}
+
 func TestProgramString(t *testing.T) {
 	prog := &Program{
 		Statements: []Statement{
@@ -13,8 +40,8 @@ func TestProgramString(t *testing.T) {
 				Token: token.Token{Type: token.Ident, Literal: "ls"},
 				Commands: []*Command{
 					{
-						Token: token.Token{Type: token.Ident, Literal: "ls"},
-						Verb:  &Identifier{Value: "ls"},
+						Token:  token.Token{Type: token.Ident, Literal: "ls"},
+						Verb:   &Identifier{Value: "ls"},
 						Target: &PathLiteral{Value: "/var/log"},
 						Modifiers: []*Modifier{
 							{Key: "ext", Value: "log"},
@@ -84,8 +111,8 @@ func TestDirectiveString(t *testing.T) {
 
 func TestCommandWithRedirect(t *testing.T) {
 	c := &Command{
-		Token: token.Token{Type: token.Ident, Literal: "ls"},
-		Verb:  &Identifier{Value: "ls"},
+		Token:  token.Token{Type: token.Ident, Literal: "ls"},
+		Verb:   &Identifier{Value: "ls"},
 		Target: &PathLiteral{Value: "/tmp"},
 		Redirect: &Redirect{
 			Direction: token.ArrowR,
