@@ -88,6 +88,48 @@ func TestFindBanishFileMissing(t *testing.T) {
 	}
 }
 
+func TestFindBanishFileSkipsDirectory(t *testing.T) {
+	root := t.TempDir()
+	sub := filepath.Join(root, "mid", "child")
+	os.MkdirAll(sub, 0755)
+
+	// A DIRECTORY named BANISH is not a manifest and must be skipped.
+	os.MkdirAll(filepath.Join(root, "mid", "BANISH"), 0755)
+
+	found := FindBanishFile(sub)
+	if found != "" {
+		t.Errorf("directory named BANISH should be skipped, got %s", found)
+	}
+}
+
+func TestFindBanishFileWalksPastDirectory(t *testing.T) {
+	root := t.TempDir()
+	sub := filepath.Join(root, "mid", "child")
+	os.MkdirAll(sub, 0755)
+
+	// Directory named BANISH at mid level, real manifest file above it.
+	os.MkdirAll(filepath.Join(root, "mid", "BANISH"), 0755)
+	os.WriteFile(filepath.Join(root, "BANISH"), []byte("!config\n"), 0644)
+
+	found := FindBanishFile(sub)
+	if found == "" {
+		t.Fatal("expected to find BANISH file above the colliding directory")
+	}
+	if found != filepath.Join(root, "BANISH") {
+		t.Errorf("found = %s, want %s", found, filepath.Join(root, "BANISH"))
+	}
+}
+
+func TestLoadBanishFileRejectsDirectory(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "BANISH")
+	os.MkdirAll(dir, 0755)
+
+	_, err := LoadBanishFile(dir)
+	if err == nil {
+		t.Fatal("expected error loading a directory as a manifest")
+	}
+}
+
 func TestEmptyBanishFile(t *testing.T) {
 	bf, err := ParseBanishFile("# empty\n", "BANISH")
 	if err != nil {
