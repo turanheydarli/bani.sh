@@ -1,0 +1,209 @@
+[
+ {
+  "name": "git-status-clean",
+  "display": "git status (clean)",
+  "command": "git status",
+  "min_save_pct": 65,
+  "must_keep": [
+   "## main"
+  ],
+  "readme": true,
+  "group": "git (status, diff, log)"
+ },
+ {
+  "name": "git-status-dirty",
+  "display": "git status (dirty)",
+  "command": "git status",
+  "min_save_pct": 55,
+  "must_keep": [
+   " M cmd/banish/gain\\.go",
+   "\\?\\? internal/bench/bench\\.go"
+  ],
+  "readme": true,
+  "group": "git (status, diff, log)"
+ },
+ {
+  "name": "git-diff",
+  "display": "git diff (2 files)",
+  "command": "git diff",
+  "min_save_pct": 58,
+  "must_keep": [
+   "MaxLines < 0",
+   "compact\\.go"
+  ],
+  "readme": true,
+  "group": "git (status, diff, log)"
+ },
+ {
+  "name": "git-log",
+  "display": "git log (8 commits)",
+  "command": "git log",
+  "min_save_pct": 55,
+  "must_keep": [
+   "fix: support --version"
+  ],
+  "readme": true,
+  "group": "git (status, diff, log)"
+ },
+ {
+  "name": "ls-la",
+  "display": "ls -la (130 entries)",
+  "command": "ls -la",
+  "min_save_pct": 10,
+  "must_keep": [
+   "more entries",
+   "file001\\.txt"
+  ],
+  "readme": false
+ },
+ {
+  "name": "grep-recursive",
+  "display": "grep -rn (60 matches)",
+  "command": "grep -rn TODO .",
+  "min_save_pct": 50,
+  "must_keep": [
+   "ops\\.go:7:",
+   "more matches"
+  ],
+  "readme": true,
+  "group": "grep -rn"
+ },
+ {
+  "name": "go-test",
+  "display": "go test ./... (1 fail)",
+  "command": "go test ./...",
+  "exit": 1,
+  "min_save_pct": 75,
+  "must_keep": [
+   "--- FAIL: TestOpsTally",
+   "package\\(s\\) ok"
+  ],
+  "readme": true,
+  "group": "go test"
+ },
+ {
+  "name": "npm-install",
+  "display": "npm install",
+  "command": "npm install",
+  "min_save_pct": 50,
+  "must_keep": [
+   "added 1247 packages"
+  ],
+  "readme": true,
+  "group": "npm install"
+ },
+ {
+  "name": "cargo-build",
+  "display": "cargo build (33 crates)",
+  "command": "cargo build",
+  "min_save_pct": 80,
+  "must_keep": [
+   "Finished"
+  ],
+  "readme": true,
+  "group": "cargo build"
+ },
+ {
+  "name": "make-clean",
+  "display": "make (20 files)",
+  "command": "make",
+  "min_save_pct": 85,
+  "must_keep": [
+   "compile commands"
+  ],
+  "readme": true,
+  "group": "make"
+ },
+ {
+  "name": "make-error",
+  "display": "make (compile error)",
+  "command": "make",
+  "exit": 2,
+  "min_save_pct": 25,
+  "must_keep": [
+   "error: expected ';'",
+   "\\*\\*\\* \\[Makefile:8"
+  ],
+  "readme": false
+ },
+ {
+  "name": "ninja",
+  "display": "ninja (30 steps)",
+  "command": "ninja",
+  "min_save_pct": 85,
+  "must_keep": [
+   "build steps"
+  ],
+  "readme": false
+ },
+ {
+  "name": "jest-pass",
+  "display": "jest (12 suites pass)",
+  "command": "jest",
+  "min_save_pct": 65,
+  "must_keep": [
+   "Tests:\\s+148 passed"
+  ],
+  "readme": true,
+  "group": "jest"
+ },
+ {
+  "name": "jest-fail",
+  "display": "jest (1 suite fails)",
+  "command": "jest",
+  "exit": 1,
+  "min_save_pct": 0,
+  "must_keep": [
+   "FAIL src/c\\.test\\.js",
+   "expect\\(received\\)\\.toBe\\(expected\\)"
+  ],
+  "readme": false
+ },
+ {
+  "name": "eslint",
+  "display": "eslint (21 problems)",
+  "command": "eslint src/",
+  "exit": 1,
+  "min_save_pct": 40,
+  "must_keep": [
+   "semi",
+   "21 problems"
+  ],
+  "readme": false
+ },
+ {
+  "name": "gh-pr-checks",
+  "display": "gh pr checks (1 fail)",
+  "command": "gh pr checks",
+  "exit": 1,
+  "min_save_pct": 55,
+  "must_keep": [
+   "test\\tfail"
+  ],
+  "readme": true,
+  "group": "gh pr checks"
+ },
+ {
+  "name": "dotnet-build",
+  "display": "dotnet build (3 projects)",
+  "command": "dotnet build",
+  "min_save_pct": 60,
+  "must_keep": [
+   "Build succeeded"
+  ],
+  "readme": true,
+  "group": "dotnet build"
+ },
+ {
+  "name": "dotnet-test-fail",
+  "display": "dotnet test (1 fail)",
+  "command": "dotnet test",
+  "exit": 1,
+  "min_save_pct": 50,
+  "must_keep": [
+   "Failed TestMul",
+   "Assert\\.Equal\\(\\) Failure"
+  ],
+  "readme": false
+ }
+]

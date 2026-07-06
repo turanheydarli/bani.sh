@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  Restored /src/Core/Core.csproj (in 312 ms).
+  Restored /src/Api/Api.csproj (in 298 ms).
+  Restored /src/Tests/Tests.csproj (in 255 ms).
+  Core -> /src/Core/bin/Debug/net8.0/Core.dll
+  Api -> /src/Api/bin/Debug/net8.0/Api.dll
+  Tests -> /src/Tests/bin/Debug/net8.0/Tests.dll
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:04.21

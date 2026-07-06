@@ -1,0 +1,5 @@
+--- FAIL: TestOpsTally (0.00s)
+    ops_test.go:71: got "FAIL pkg3" want "FAIL pkg3\n== 2 ok"
+FAIL
+FAIL	go.banish.sh/banish/internal/compact	0.412s
+== 25 package(s) ok

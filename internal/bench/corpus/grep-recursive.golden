@@ -1,0 +1,24 @@
+internal/compact/ops.go:7:	// TODO: handle edge case 1 in ops.go
+internal/compact/ops.go:14:	// TODO: handle edge case 2 in ops.go
+internal/compact/ops.go:21:	// TODO: handle edge case 3 in ops.go
+internal/compact/ops.go:28:	// TODO: handle edge case 4 in ops.go
+internal/compact/ops.go:35:	// TODO: handle edge case 5 in ops.go
++10 more matches
+internal/runtime/fallback.go:7:	// TODO: handle edge case 1 in fallback.go
+internal/runtime/fallback.go:14:	// TODO: handle edge case 2 in fallback.go
+internal/runtime/fallback.go:21:	// TODO: handle edge case 3 in fallback.go
+internal/runtime/fallback.go:28:	// TODO: handle edge case 4 in fallback.go
+internal/runtime/fallback.go:35:	// TODO: handle edge case 5 in fallback.go
++10 more matches
+cmd/banish/main.go:7:	// TODO: handle edge case 1 in main.go
+cmd/banish/main.go:14:	// TODO: handle edge case 2 in main.go
+cmd/banish/main.go:21:	// TODO: handle edge case 3 in main.go
+cmd/banish/main.go:28:	// TODO: handle edge case 4 in main.go
+cmd/banish/main.go:35:	// TODO: handle edge case 5 in main.go
++10 more matches
+internal/extension/extension.go:7:	// TODO: handle edge case 1 in extension.go
+internal/extension/extension.go:14:	// TODO: handle edge case 2 in extension.go
+internal/extension/extension.go:21:	// TODO: handle edge case 3 in extension.go
+internal/extension/extension.go:28:	// TODO: handle edge case 4 in extension.go
+internal/extension/extension.go:35:	// TODO: handle edge case 5 in extension.go
++10 more matches

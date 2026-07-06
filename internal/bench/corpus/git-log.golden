@@ -1,0 +1,8 @@
+bd2b2a4 Merge pull request #7 from Long104/fix/version-flags
+7cfc3c4 fix: support --version and -v flags in main subcommand router
+b606a62 docs: add module-level package documentation
+29b809e Merge pull request #2 from turanheydarli/chore/rename-domain-banish-sh
+78b0482 chore: rename module and domain to banish.sh
+41c9e02 feat: add MCP server with stdio transport
+9a3f7d1 feat: track token savings in freq.json
+c5e8b90 feat: initial interpreter and .bsh parser

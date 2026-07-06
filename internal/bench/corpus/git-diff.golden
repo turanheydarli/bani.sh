@@ -1,0 +1,11 @@
+=== internal/compact/ops.go +4 -1
+@ 49
++	if o.MaxLines < 0 {
++		return text
++	}
+@ 71
+-		lines = append(lines[:o.MaxLines], o.overflowMarker(omitted))
++		lines = append(lines[:o.MaxLines], o.marker(omitted))
+=== internal/compact/compact.go +1 -0
+@ 24
++// Compact runs the full output cascade for cmdline.
