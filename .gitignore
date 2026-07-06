@@ -7,3 +7,6 @@ bin/
 .claude/
 .mcp.json
 __pycache__/
+
+# Merge conflict backup files
+*.orig
