@@ -37,6 +37,7 @@ type Fixture struct {
 	MinSavePct float64  `json:"min_save_pct"`
 	MustKeep   []string `json:"must_keep"`
 	Readme     bool     `json:"readme"`
+	Group      string   `json:"group"` // README row label; fixtures sharing it aggregate
 
 	Raw    string `json:"-"`
 	Orig   string `json:"-"`
@@ -228,17 +229,46 @@ func RenderTable(results []Result) string {
 }
 
 // ReadmeTable renders the markdown savings table for fixtures marked
-// readme: true, matching the README's Supported section format.
+// readme: true. Fixtures sharing a group label aggregate into one general
+// row (e.g. all git fixtures become a single "git" row), keeping the
+// published table at the tool level rather than per-fixture.
 func ReadmeTable(results []Result) string {
-	var b strings.Builder
-	b.WriteString("| Command | Raw | Compacted | Savings |\n")
-	b.WriteString("|---------|-----|-----------|---------|\n")
+	type agg struct {
+		label   string
+		rawToks int64
+		outToks int64
+	}
+	var order []string
+	groups := map[string]*agg{}
 	for _, r := range results {
 		if !r.Fixture.Readme {
 			continue
 		}
+		label := r.Fixture.Group
+		if label == "" {
+			label = r.Fixture.Display
+		}
+		g, ok := groups[label]
+		if !ok {
+			g = &agg{label: label}
+			groups[label] = g
+			order = append(order, label)
+		}
+		g.rawToks += r.RawToks
+		g.outToks += r.OutToks
+	}
+
+	var b strings.Builder
+	b.WriteString("| Command | Raw | Compacted | Savings |\n")
+	b.WriteString("|---------|-----|-----------|---------|\n")
+	for _, label := range order {
+		g := groups[label]
+		pct := 0.0
+		if g.rawToks > 0 {
+			pct = float64(g.rawToks-g.outToks) / float64(g.rawToks) * 100
+		}
 		fmt.Fprintf(&b, "| `%s` | %d tok | %d tok | %.0f%% |\n",
-			r.Fixture.Display, r.RawToks, r.OutToks, r.SavePct)
+			g.label, g.rawToks, g.outToks, pct)
 	}
 	return b.String()
 }

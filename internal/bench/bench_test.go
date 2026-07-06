@@ -69,6 +69,27 @@ func TestCorpusAggregate(t *testing.T) {
 	}
 }
 
+// TestReadmeTableGroups verifies fixtures sharing a group label collapse
+// into one general row, so the README stays at the tool level.
+func TestReadmeTableGroups(t *testing.T) {
+	results, err := RunAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	table := ReadmeTable(results)
+	if n := strings.Count(table, "git (status, diff, log)"); n != 1 {
+		t.Errorf("want exactly one aggregated git row, got %d:\n%s", n, table)
+	}
+	if strings.Contains(table, "git status (dirty)") {
+		t.Errorf("per-fixture git row leaked into the grouped table:\n%s", table)
+	}
+	for _, label := range []string{"`make`", "`jest`", "`dotnet build`"} {
+		if !strings.Contains(table, label) {
+			t.Errorf("missing group row %s:\n%s", label, table)
+		}
+	}
+}
+
 func TestUpdateReadme(t *testing.T) {
 	results, err := RunAll()
 	if err != nil {

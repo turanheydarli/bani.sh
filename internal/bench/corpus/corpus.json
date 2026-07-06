@@ -7,7 +7,8 @@
   "must_keep": [
    "## main"
   ],
-  "readme": true
+  "readme": true,
+  "group": "git (status, diff, log)"
  },
  {
   "name": "git-status-dirty",
@@ -18,7 +19,8 @@
    " M cmd/banish/gain\\.go",
    "\\?\\? internal/bench/bench\\.go"
   ],
-  "readme": true
+  "readme": true,
+  "group": "git (status, diff, log)"
  },
  {
   "name": "git-diff",
@@ -29,7 +31,8 @@
    "MaxLines < 0",
    "compact\\.go"
   ],
-  "readme": true
+  "readme": true,
+  "group": "git (status, diff, log)"
  },
  {
   "name": "git-log",
@@ -39,7 +42,8 @@
   "must_keep": [
    "fix: support --version"
   ],
-  "readme": true
+  "readme": true,
+  "group": "git (status, diff, log)"
  },
  {
   "name": "ls-la",
@@ -61,7 +65,8 @@
    "ops\\.go:7:",
    "more matches"
   ],
-  "readme": true
+  "readme": true,
+  "group": "grep -rn"
  },
  {
   "name": "go-test",
@@ -73,7 +78,8 @@
    "--- FAIL: TestOpsTally",
    "package\\(s\\) ok"
   ],
-  "readme": true
+  "readme": true,
+  "group": "go test"
  },
  {
   "name": "npm-install",
@@ -83,7 +89,8 @@
   "must_keep": [
    "added 1247 packages"
   ],
-  "readme": true
+  "readme": true,
+  "group": "npm install"
  },
  {
   "name": "cargo-build",
@@ -93,7 +100,8 @@
   "must_keep": [
    "Finished"
   ],
-  "readme": true
+  "readme": true,
+  "group": "cargo build"
  },
  {
   "name": "make-clean",
@@ -103,7 +111,8 @@
   "must_keep": [
    "compile commands"
   ],
-  "readme": true
+  "readme": true,
+  "group": "make"
  },
  {
   "name": "make-error",
@@ -135,7 +144,8 @@
   "must_keep": [
    "Tests:\\s+148 passed"
   ],
-  "readme": true
+  "readme": true,
+  "group": "jest"
  },
  {
   "name": "jest-fail",
@@ -170,7 +180,8 @@
   "must_keep": [
    "test\\tfail"
   ],
-  "readme": true
+  "readme": true,
+  "group": "gh pr checks"
  },
  {
   "name": "dotnet-build",
@@ -180,7 +191,8 @@
   "must_keep": [
    "Build succeeded"
   ],
-  "readme": true
+  "readme": true,
+  "group": "dotnet build"
  },
  {
   "name": "dotnet-test-fail",
