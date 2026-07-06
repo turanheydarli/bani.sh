@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	stdruntime "runtime"
 	"strings"
 	"time"
 
@@ -57,8 +58,9 @@ func main() {
 	}
 
 	root := &cobra.Command{
-		Use:   "banish [code]",
-		Short: "Adaptive middleware and scripting runtime for LLM agents",
+		Use:     "banish [code]",
+		Version: version,
+		Short:   "Adaptive middleware and scripting runtime for LLM agents",
 		Long: `banish -- token-optimized adaptive middleware, MCP server, and scripting runtime.
 
 Usage:
@@ -71,6 +73,8 @@ Usage:
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
+
+	root.SetVersionTemplate(fmt.Sprintf("banish {{.Version}} %s/%s\n", stdruntime.GOOS, stdruntime.GOARCH))
 
 	root.PersistentFlags().BoolVar(&flagHuman, "human", false, "human-readable output")
 	root.PersistentFlags().BoolVar(&flagVerbose, "verbose", false, "verbose error output")
@@ -157,6 +161,7 @@ var subcommands = map[string]bool{
 	"discover": true, "learn": true,
 	"--human": true, "--verbose": true, "--timeout": true, "--stats": true,
 	"-h": true, "--help": true,
+	"--version": true, "-v": true,
 }
 
 func isSubcommand(arg string) bool {

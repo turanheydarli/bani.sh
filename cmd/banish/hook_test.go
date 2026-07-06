@@ -25,3 +25,23 @@ func TestClaudeOutput(t *testing.T) {
 		}
 	}
 }
+
+func TestIsSubcommand(t *testing.T) {
+	tests := []struct {
+		arg  string
+		want bool
+	}{
+		{"run", true},
+		{"version", true},
+		{"--version", true},
+		{"-v", true},
+		{"echo", false},
+		{"ls", false},
+		{"--foo", false},
+	}
+	for _, tc := range tests {
+		if got := isSubcommand(tc.arg); got != tc.want {
+			t.Errorf("isSubcommand(%q) = %t, want %t", tc.arg, got, tc.want)
+		}
+	}
+}
