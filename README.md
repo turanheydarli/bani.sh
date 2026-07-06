@@ -96,6 +96,7 @@ automatically on every merge to main - reproduce it any time with
 | `jest` | 170 tok | 37 tok | 78% |
 | `gh pr checks` | 73 tok | 22 tok | 70% |
 | `dotnet build` | 96 tok | 23 tok | 76% |
+| `JSON-preferred (kubectl / gh)` | 1214 tok | 889 tok | 27% |
 | `lockfile diffs` | 1467 tok | 249 tok | 83% |
 <!-- bench:end -->
 
