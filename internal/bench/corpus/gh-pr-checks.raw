@@ -1,0 +1,4 @@
+build	pass	1m12s	https://github.com/turanheydarli/bani.sh/actions/runs/101
+lint	pass	44s	https://github.com/turanheydarli/bani.sh/actions/runs/102
+vuln	pass	38s	https://github.com/turanheydarli/bani.sh/actions/runs/103
+test	fail	2m03s	https://github.com/turanheydarli/bani.sh/actions/runs/104

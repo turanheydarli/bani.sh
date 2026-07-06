@@ -1,0 +1,18 @@
+PASS src/components/widget00.test.tsx (1.0 s)
+PASS src/components/widget01.test.tsx (1.1 s)
+PASS src/components/widget02.test.tsx (1.2 s)
+PASS src/components/widget03.test.tsx (1.3 s)
+PASS src/components/widget04.test.tsx (1.4 s)
+PASS src/components/widget05.test.tsx (1.5 s)
+PASS src/components/widget06.test.tsx (1.6 s)
+PASS src/components/widget07.test.tsx (1.7 s)
+PASS src/components/widget08.test.tsx (1.8 s)
+PASS src/components/widget09.test.tsx (1.9 s)
+PASS src/components/widget10.test.tsx (2.0 s)
+PASS src/components/widget11.test.tsx (2.1 s)
+
+Test Suites: 12 passed, 12 total
+Tests:       148 passed, 148 total
+Snapshots:   0 total
+Time:        14.2 s
+Ran all test suites.

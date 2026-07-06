@@ -1,0 +1,29 @@
+ok  	go.banish.sh/banish/internal/pkg01	0.011s
+ok  	go.banish.sh/banish/internal/pkg02	0.022s
+ok  	go.banish.sh/banish/internal/pkg03	0.033s
+ok  	go.banish.sh/banish/internal/pkg04	0.044s
+ok  	go.banish.sh/banish/internal/pkg05	0.055s
+ok  	go.banish.sh/banish/internal/pkg06	0.066s
+ok  	go.banish.sh/banish/internal/pkg07	0.077s
+ok  	go.banish.sh/banish/internal/pkg08	0.088s
+ok  	go.banish.sh/banish/internal/pkg09	0.099s
+ok  	go.banish.sh/banish/internal/pkg10	0.100s
+ok  	go.banish.sh/banish/internal/pkg11	0.111s
+ok  	go.banish.sh/banish/internal/pkg12	0.122s
+ok  	go.banish.sh/banish/internal/pkg13	0.133s
+ok  	go.banish.sh/banish/internal/pkg14	0.144s
+ok  	go.banish.sh/banish/internal/pkg15	0.155s
+ok  	go.banish.sh/banish/internal/pkg16	0.166s
+ok  	go.banish.sh/banish/internal/pkg17	0.177s
+ok  	go.banish.sh/banish/internal/pkg18	0.188s
+ok  	go.banish.sh/banish/internal/pkg19	0.199s
+ok  	go.banish.sh/banish/internal/pkg20	0.200s
+ok  	go.banish.sh/banish/internal/pkg21	0.211s
+ok  	go.banish.sh/banish/internal/pkg22	0.222s
+ok  	go.banish.sh/banish/internal/pkg23	0.233s
+ok  	go.banish.sh/banish/internal/pkg24	0.244s
+ok  	go.banish.sh/banish/internal/pkg25	0.255s
+--- FAIL: TestOpsTally (0.00s)
+    ops_test.go:71: got "FAIL pkg3" want "FAIL pkg3\n== 2 ok"
+FAIL
+FAIL	go.banish.sh/banish/internal/compact	0.412s

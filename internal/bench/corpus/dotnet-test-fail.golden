@@ -1,0 +1,7 @@
+  Failed TestMul [5 ms]
+  Error Message:
+   Assert.Equal() Failure
+   Expected: 42
+   Actual:   41
+Failed!  - Failed:     1, Passed:    14, Skipped:     0, Total:    15
+== 14 tests passed
