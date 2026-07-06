@@ -29,7 +29,7 @@ func FallbackHandler(exec *Executor, scriptFilters []compact.ScriptFilterDef, re
 		// verb expansions already chose their exact command.
 		if name == "__shell__" {
 			if s, ok := cmd.Target.(*ast.StringLiteral); ok {
-				executed, rule := rewriter.Rewrite(s.Value)
+				executed, rule, ruleName := rewriter.RewriteRule(s.Value)
 
 				r, err := exec.RunShell(ctx, executed)
 				if err != nil {
@@ -37,7 +37,17 @@ func FallbackHandler(exec *Executor, scriptFilters []compact.ScriptFilterDef, re
 				}
 
 				result := applyCompaction(filters, executed, string(r.Stdout), string(r.Stderr), r.ExitCode)
-				result.Rewritten = rule
+				result.Rewritten = ruleName
+				// Only announce rewrites that materially change output shape.
+				// Cosmetic flag additions (e.g. git status --porcelain -b) do
+				// not need per-invocation provenance; JSON preference does.
+				if rule != nil && rule.Announce {
+					if a := compact.AnnounceRewrite(s.Value, executed); a != "" {
+						if text, ok := result.Data.(string); ok {
+							result.Data = a + "\n" + text
+						}
+					}
+				}
 
 				if r.ExitCode != 0 {
 					if result.Meta == nil {

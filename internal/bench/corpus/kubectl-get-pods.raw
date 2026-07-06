@@ -1,0 +1,27 @@
+{
+  "kind": "PodList",
+  "apiVersion": "v1",
+  "metadata": { "resourceVersion": "128473" },
+  "items": [
+    {"kind":"Pod","metadata":{"name":"api-server-7f8b4d9c6-abcde","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0},{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"api-server-7f8b4d9c6-fghij","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0},{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"api-server-7f8b4d9c6-klmno","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":1},{"ready":true,"restartCount":1}]}},
+    {"kind":"Pod","metadata":{"name":"api-server-7f8b4d9c6-pqrst","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0},{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"worker-abc-6c9d8f5b7-abcdef","namespace":"default"},"status":{"phase":"CrashLoopBackOff","containerStatuses":[{"ready":false,"restartCount":17}]}},
+    {"kind":"Pod","metadata":{"name":"worker-abc-6c9d8f5b7-ghijkl","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"worker-abc-6c9d8f5b7-mnopqr","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"worker-abc-6c9d8f5b7-stuvwx","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"scheduler-88f5d4c9b-efghi","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"scheduler-88f5d4c9b-jklmn","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"scheduler-88f5d4c9b-opqrs","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"scheduler-88f5d4c9b-tuvwx","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"redis-primary-0","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"redis-replica-0","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"redis-replica-1","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"metrics-collector-abc123","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"metrics-collector-def456","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"metrics-collector-ghi789","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"metrics-collector-jkl012","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}},
+    {"kind":"Pod","metadata":{"name":"metrics-collector-mno345","namespace":"default"},"status":{"phase":"Running","containerStatuses":[{"ready":true,"restartCount":0}]}}
+  ]
+}

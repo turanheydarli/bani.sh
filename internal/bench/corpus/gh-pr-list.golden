@@ -1,0 +1,14 @@
+[banish → gh pr list --json number,title,state,author,createdAt,headRefName]
+NUM  STATE  AUTHOR         BRANCH                       AGE  TITLE
+#42  OPEN   turanheydarli  feat/lockfile-diff-renderer  2d   feat(compact): lockfile-aware semantic diff renderer
+#41  OPEN   turanheydarli  feat/bench-suite             3d   feat(bench): token-savings benchmark suite
+#40  OPEN   contributor1   feat/dotnet-filter           3d   feat: dotnet builtin filter pack
+#39  OPEN   contributor1   feat/jstest-filter           4d   feat: JS test/lint runner builtin filter pack
+#38  OPEN   contributor2   feat/make-filter             4d   feat: make/cmake/ninja builtin filter pack
+#37  OPEN   contributor2   feat/gh-filter               4d   feat: gh CLI builtin filter pack
+#36  OPEN   contributor3   fix/empty-commit             6d   fix: handle empty commit messages in git log
+#35  OPEN   contributor3   fix/kube-describe            6d   fix: kubectl-describe filter drops critical annotations
+#34  OPEN   docwriter      docs/contributing            6d   docs: expand contributing guide
+#33  OPEN   contributor4   feat/markdown-fetch          8d   feat: markdown ingestion for fetch and read
+#32  OPEN   contributor5   feat/completions             8d   feat: add shell completions
+#31  OPEN   maintainer     chore/go-version             10d  chore: bump go to 1.26

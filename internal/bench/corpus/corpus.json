@@ -205,5 +205,51 @@
    "Assert\\.Equal\\(\\) Failure"
   ],
   "readme": false
+ },
+ {
+  "name": "kubectl-get-pods",
+  "display": "kubectl get pods (20 pods)",
+  "command": "kubectl get pods",
+  "min_save_pct": 20,
+  "must_keep": [
+   "api-server-7f8b4d9c6-abcde",
+   "worker-abc-6c9d8f5b7-abcdef",
+   "CrashLoopBackOff",
+   "\\[banish →",
+   "-o json"
+  ],
+  "readme": true,
+  "group": "JSON-preferred (kubectl / gh)"
+ },
+ {
+  "name": "gh-pr-list",
+  "display": "gh pr list (12 PRs)",
+  "command": "gh pr list",
+  "min_save_pct": 12,
+  "must_keep": [
+   "#42",
+   "turanheydarli",
+   "feat/lockfile-diff-renderer",
+   "\\[banish →",
+   "--json"
+  ],
+  "readme": true,
+  "group": "JSON-preferred (kubectl / gh)"
+ },
+ {
+  "name": "gh-run-list",
+  "display": "gh run list (10 runs)",
+  "command": "gh run list",
+  "min_save_pct": 35,
+  "must_keep": [
+   "9001",
+   "success",
+   "failure",
+   "Release",
+   "\\[banish →",
+   "--json"
+  ],
+  "readme": true,
+  "group": "JSON-preferred (kubectl / gh)"
  }
 ]

@@ -16,11 +16,21 @@ import (
 	"sort"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"go.banish.sh/banish/internal/analyzer"
 	"go.banish.sh/banish/internal/compact"
 	"go.banish.sh/banish/internal/extension"
 )
+
+// benchNow pins the clock used by time-sensitive renderers (gh ages, etc.)
+// so golden files stay stable across runs. The date is deliberately anchored
+// slightly after all fixture timestamps in the corpus.
+var benchNow = time.Date(2026, 7, 7, 12, 0, 0, 0, time.UTC)
+
+func init() {
+	compact.Now = func() time.Time { return benchNow }
+}
 
 //go:embed corpus
 var corpusFS embed.FS
@@ -125,6 +135,7 @@ func NewPipeline() (*Pipeline, error) {
 	for _, rw := range loader.Rewrites() {
 		rules = append(rules, compact.RewriteRule{
 			Name: rw.Name, Match: rw.Match, Unless: rw.Unless, To: rw.To,
+			Announce: rw.Announce,
 		})
 	}
 
@@ -135,12 +146,19 @@ func NewPipeline() (*Pipeline, error) {
 
 // Run measures one fixture through rewrite plus the full compaction cascade.
 func (p *Pipeline) Run(f Fixture) Result {
-	executed, _ := p.rewriter.Rewrite(f.Command)
+	executed, rule, _ := p.rewriter.RewriteRule(f.Command)
 	out, handler := p.registry.Compact(executed, f.Raw, f.Stderr, f.Exit)
 	if handler == "" {
 		out = strings.TrimRight(f.Raw, "\n")
 		if f.Stderr != "" {
 			out += "\n[stderr] " + strings.TrimRight(f.Stderr, "\n")
+		}
+	}
+	// Only announce rewrites the rule opts in to. Bench measures the audit
+	// line's real token cost so goldens reflect user-facing output.
+	if rule != nil && rule.Announce {
+		if a := compact.AnnounceRewrite(f.Command, executed); a != "" {
+			out = a + "\n" + out
 		}
 	}
 
