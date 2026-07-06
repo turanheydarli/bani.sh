@@ -44,24 +44,12 @@ func modVal(cmd *ast.Command, key string) string {
 	return ""
 }
 
-// target returns the target's raw value, or empty. It unwraps literal nodes so
+// target returns the target's raw value, or empty. It uses ast.RawValue so
 // callers get the underlying value (e.g. a URL) rather than the re-serialized
 // form: StringLiteral.String() re-adds surrounding quotes, which would corrupt a
 // quoted argument like "https://example.com".
 func target(cmd *ast.Command) string {
-	if cmd.Target == nil {
-		return ""
-	}
-	switch t := cmd.Target.(type) {
-	case *ast.StringLiteral:
-		return t.Value
-	case *ast.Identifier:
-		return t.Value
-	case *ast.NumberLiteral:
-		return t.Value
-	default:
-		return cmd.Target.String()
-	}
+	return ast.RawValue(cmd.Target)
 }
 
 // =========================================================================
@@ -69,7 +57,7 @@ func target(cmd *ast.Command) string {
 
 func bEcho(_ context.Context, cmd *ast.Command, input *interpreter.Result) (*interpreter.Result, error) {
 	if cmd.Target != nil {
-		return interpreter.NewResult(cmd.Target.String()), nil
+		return interpreter.NewResult(target(cmd)), nil
 	}
 	if input != nil {
 		return input, nil

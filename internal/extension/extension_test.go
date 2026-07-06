@@ -89,6 +89,46 @@ func TestRegister(t *testing.T) {
 	}
 }
 
+// A verb whose expand splices $1 into a shell command must not let a crafted
+// target value execute injected commands: the substituted value is shell-quoted,
+// so shell metacharacters are literal. Regression for the MCP arg-injection
+// finding.
+func TestExtensionArgInjectionQuoted(t *testing.T) {
+	marker := filepath.Join(t.TempDir(), "PWNED")
+
+	h := MakeVerbHandler("greet", "exec echo hi $1")
+	payload := "x; touch " + marker + "; echo done"
+	cmd := &ast.Command{Target: &ast.StringLiteral{Value: payload}}
+
+	r, err := h(context.Background(), cmd, nil)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if _, statErr := os.Stat(marker); statErr == nil {
+		t.Fatal("injection succeeded: marker file was created")
+	}
+	// The payload must survive verbatim as a single argument to echo.
+	if got := r.String(); got != "hi "+payload {
+		t.Errorf("output = %q, want %q", got, "hi "+payload)
+	}
+}
+
+// The same guarantee for a modifier value ($key substitution).
+func TestExtensionModifierInjectionQuoted(t *testing.T) {
+	marker := filepath.Join(t.TempDir(), "PWNED")
+
+	h := MakeVerbHandler("greet", "exec echo hi $who")
+	payload := "a; touch " + marker
+	cmd := &ast.Command{Modifiers: []*ast.Modifier{{Key: "who", Value: payload}}}
+
+	if _, err := h(context.Background(), cmd, nil); err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if _, statErr := os.Stat(marker); statErr == nil {
+		t.Fatal("modifier injection succeeded: marker file was created")
+	}
+}
+
 func TestExtensionShadowsBuiltin(t *testing.T) {
 	reg := interpreter.NewVerbRegistry()
 

@@ -13,8 +13,18 @@ package shell
 import (
 	"os/exec"
 	"runtime"
+	"strings"
 	"sync"
 )
+
+// Quote wraps s as a single literal argument to a POSIX shell (sh/bash) - the
+// shells Args uses on Unix and, when present, on Windows. The value is
+// single-quoted with embedded single quotes escaped, so no metacharacter in s
+// (spaces, ;, |, $, backticks, quotes) can start a new command or split a word.
+// Use it for any untrusted value spliced into a shell command string.
+func Quote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
 
 var (
 	winShellOnce sync.Once
