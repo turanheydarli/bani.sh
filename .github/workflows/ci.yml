@@ -18,6 +18,8 @@ jobs:
           go-version-file: go.mod
           cache: true
       - run: go test -race -count=1 ./...
+      - name: token savings report
+        run: go run ./cmd/banish bench --check
 
   lint:
     runs-on: ubuntu-latest
