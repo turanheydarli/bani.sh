@@ -1,0 +1,70 @@
+!extension jstest v:1.0
+
+# JS test and lint runners: passing output is counted away, failures and
+# summary lines pass through. Each tool gets a direct and an npx form
+# because !match is a single prefix.
+
+!filter jest
+!match jest
+!tally "^PASS " "== {n} suites passed"
+!drop "^PASS "
+!drop "^$"
+!max-lines 80
+!overflow "+{n} more lines"
+
+!filter npx-jest
+!match npx jest
+!tally "^PASS " "== {n} suites passed"
+!drop "^PASS "
+!drop "^$"
+!max-lines 80
+!overflow "+{n} more lines"
+
+!filter vitest
+!match vitest
+!tally "✓" "== {n} passing"
+!drop "✓"
+!drop "^$"
+!max-lines 80
+!overflow "+{n} more lines"
+
+!filter npx-vitest
+!match npx vitest
+!tally "✓" "== {n} passing"
+!drop "✓"
+!drop "^$"
+!max-lines 80
+!overflow "+{n} more lines"
+
+# eslint prints only files with problems; problem lines end with the rule id,
+# so group by rule to cap repeats of the same violation.
+
+!filter eslint
+!match eslint
+!group-by "\s([a-z@][\w/-]+)$"
+!per-group 8
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more problems"
+
+!filter npx-eslint
+!match npx eslint
+!group-by "\s([a-z@][\w/-]+)$"
+!per-group 8
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more problems"
+
+# tsc output is already error-only; just cap it.
+
+!filter tsc
+!match tsc
+!drop "^$"
+!max-lines 60
+!overflow "+{n} more errors"
+
+!filter npx-tsc
+!match npx tsc
+!drop "^$"
+!max-lines 60
+!overflow "+{n} more errors"
