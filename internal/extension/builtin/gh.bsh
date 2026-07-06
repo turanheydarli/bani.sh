@@ -1,0 +1,48 @@
+!extension gh v:1.0
+
+!verb ghpr
+!expand exec gh pr list
+!help "List open pull requests"
+
+!verb ghruns
+!expand exec gh run list --limit 10
+!help "List recent workflow runs"
+
+# gh emits tab-separated, headerless rows when piped, so the win here is
+# capping list length and clamping long titles/URLs.
+
+!filter gh-pr-list
+!match gh pr list
+!drop "^$"
+!max-line-len 160
+!max-lines 20
+!overflow "+{n} more"
+
+!filter gh-issue-list
+!match gh issue list
+!drop "^$"
+!max-line-len 160
+!max-lines 20
+!overflow "+{n} more"
+
+!filter gh-run-list
+!match gh run list
+!drop "^$"
+!max-line-len 160
+!max-lines 20
+!overflow "+{n} more"
+
+!filter gh-pr-view
+!match gh pr view
+!drop "^$"
+!max-line-len 200
+!max-lines 40
+!overflow "+{n} more lines"
+
+!filter gh-pr-checks
+!match gh pr checks
+!tally "\spass\s" "== {n} checks pass"
+!drop "\spass\s"
+!drop "^$"
+!max-lines 30
+!overflow "+{n} more"
