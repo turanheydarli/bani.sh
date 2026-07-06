@@ -40,12 +40,15 @@ type FilterDef struct {
 }
 
 // RewriteDef swaps a command for a machine-readable variant before it runs.
-// Defined via !rewrite / !match / !unless / !to.
+// Defined via !rewrite / !match / !unless / !to. Announce opts the rule in
+// to the [banish → ...] audit line; use for rewrites that materially change
+// output shape (JSON preferred over table), skip for cosmetic flag additions.
 type RewriteDef struct {
-	Name   string
-	Match  string   // tokenized command prefix, e.g. "git status"
-	Unless []string // flags that disable the rewrite
-	To     string   // replacement command prefix
+	Name     string
+	Match    string   // tokenized command prefix, e.g. "git status"
+	Unless   []string // flags that disable the rewrite
+	To       string   // replacement command prefix
+	Announce bool     // set via !announce; surfaces the audit line
 }
 
 // ExtensionMeta holds metadata from the !extension directive.
@@ -346,6 +349,11 @@ func parseRewriteDetails(prog *ast.Program, ext *ExtensionMeta) {
 					rw.To = directiveValue(dir)
 				case "unless":
 					rw.Unless = append(rw.Unless, strings.Fields(directiveValue(dir))...)
+				case "announce":
+					// Bareword or explicit value; anything non-empty and
+					// not "false"/"off"/"0" turns it on.
+					v := strings.ToLower(strings.TrimSpace(directiveValue(dir)))
+					rw.Announce = v != "false" && v != "off" && v != "0" && v != "no"
 				}
 			}
 		}

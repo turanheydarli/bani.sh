@@ -1,0 +1,12 @@
+[banish → gh run list --json databaseId,name,status,conclusion,displayTitle,createdAt]
+ID    STATUS       CONCLUSION  WORKFLOW  AGE  TITLE
+9001  completed    success     CI        3h   Merge pull request #42 from turanheydarli/feat/lockfile
+9000  completed    failure     CI        18h  feat(compact): lockfile-aware semantic diff renderer
+8999  in_progress  -           Release   15m  Publish v1.2.3
+8998  completed    success     CI        20h  ci: dedicated bench job with summary and README freshness
+8997  completed    success     CI        21h  feat: aggregate README savings rows by tool group
+8996  completed    cancelled   CI        23h  feat: token-savings benchmark suite
+8995  completed    success     CI        1d   Update README
+8994  completed    success     Release   1d   Release v1.2.2
+8993  completed    success     CI        1d   Merge pull request #40 from contributor1/feat/dotnet
+8992  completed    failure     CI        3d   feat: dotnet builtin filter pack

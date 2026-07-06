@@ -1,0 +1,12 @@
+[
+  {"databaseId":9001,"name":"CI","status":"completed","conclusion":"success","displayTitle":"Merge pull request #42 from turanheydarli/feat/lockfile","createdAt":"2026-07-07T09:00:00Z"},
+  {"databaseId":9000,"name":"CI","status":"completed","conclusion":"failure","displayTitle":"feat(compact): lockfile-aware semantic diff renderer","createdAt":"2026-07-06T18:00:00Z"},
+  {"databaseId":8999,"name":"Release","status":"in_progress","conclusion":null,"displayTitle":"Publish v1.2.3","createdAt":"2026-07-07T11:45:00Z"},
+  {"databaseId":8998,"name":"CI","status":"completed","conclusion":"success","displayTitle":"ci: dedicated bench job with summary and README freshness","createdAt":"2026-07-06T15:20:00Z"},
+  {"databaseId":8997,"name":"CI","status":"completed","conclusion":"success","displayTitle":"feat: aggregate README savings rows by tool group","createdAt":"2026-07-06T14:10:00Z"},
+  {"databaseId":8996,"name":"CI","status":"completed","conclusion":"cancelled","displayTitle":"feat: token-savings benchmark suite","createdAt":"2026-07-06T13:00:00Z"},
+  {"databaseId":8995,"name":"CI","status":"completed","conclusion":"success","displayTitle":"Update README","createdAt":"2026-07-05T22:00:00Z"},
+  {"databaseId":8994,"name":"Release","status":"completed","conclusion":"success","displayTitle":"Release v1.2.2","createdAt":"2026-07-05T21:00:00Z"},
+  {"databaseId":8993,"name":"CI","status":"completed","conclusion":"success","displayTitle":"Merge pull request #40 from contributor1/feat/dotnet","createdAt":"2026-07-05T15:30:00Z"},
+  {"databaseId":8992,"name":"CI","status":"completed","conclusion":"failure","displayTitle":"feat: dotnet builtin filter pack","createdAt":"2026-07-03T14:20:00Z"}
+]

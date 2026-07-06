@@ -25,6 +25,9 @@ type nativeRenderer struct {
 var nativeRenderers = []nativeRenderer{
 	{"git-diff", "git diff", renderGitDiff},
 	{"git-show", "git show", renderGitDiff},
+	{"kubectl-get-json", "kubectl get", renderKubectlGet},
+	{"gh-pr-list-json", "gh pr list", renderGHPRList},
+	{"gh-run-list-json", "gh run list", renderGHRunList},
 }
 
 func init() {

@@ -1,0 +1,15 @@
+Showing 12 of 12 open pull requests in turanheydarli/bani.sh
+
+ID   TITLE                                                               BRANCH                        CREATED
+#42  feat(compact): lockfile-aware semantic diff renderer                feat/lockfile-diff-renderer   about 2 days ago
+#41  feat(bench): token-savings benchmark suite                          feat/bench-suite              about 3 days ago
+#40  feat: dotnet builtin filter pack                                    feat/dotnet-filter            about 4 days ago
+#39  feat: JS test/lint runner builtin filter pack                       feat/jstest-filter            about 4 days ago
+#38  feat: make/cmake/ninja builtin filter pack                          feat/make-filter              about 5 days ago
+#37  feat: gh CLI builtin filter pack                                    feat/gh-filter                about 5 days ago
+#36  fix: handle empty commit messages in git log                        fix/empty-commit              about 6 days ago
+#35  fix: kubectl-describe filter drops critical annotations              fix/kube-describe             about 6 days ago
+#34  docs: expand contributing guide                                     docs/contributing             about 7 days ago
+#33  feat: markdown ingestion for fetch and read                         feat/markdown-fetch           about 8 days ago
+#32  feat: add shell completions                                         feat/completions              about 8 days ago
+#31  chore: bump go to 1.26                                              chore/go-version              about 10 days ago

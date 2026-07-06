@@ -1,0 +1,14 @@
+[
+  {"number":42,"title":"feat(compact): lockfile-aware semantic diff renderer","state":"OPEN","author":{"login":"turanheydarli"},"createdAt":"2026-07-05T10:00:00Z","headRefName":"feat/lockfile-diff-renderer"},
+  {"number":41,"title":"feat(bench): token-savings benchmark suite","state":"OPEN","author":{"login":"turanheydarli"},"createdAt":"2026-07-04T09:15:00Z","headRefName":"feat/bench-suite"},
+  {"number":40,"title":"feat: dotnet builtin filter pack","state":"OPEN","author":{"login":"contributor1"},"createdAt":"2026-07-03T14:20:00Z","headRefName":"feat/dotnet-filter"},
+  {"number":39,"title":"feat: JS test/lint runner builtin filter pack","state":"OPEN","author":{"login":"contributor1"},"createdAt":"2026-07-03T12:00:00Z","headRefName":"feat/jstest-filter"},
+  {"number":38,"title":"feat: make/cmake/ninja builtin filter pack","state":"OPEN","author":{"login":"contributor2"},"createdAt":"2026-07-02T18:00:00Z","headRefName":"feat/make-filter"},
+  {"number":37,"title":"feat: gh CLI builtin filter pack","state":"OPEN","author":{"login":"contributor2"},"createdAt":"2026-07-02T16:30:00Z","headRefName":"feat/gh-filter"},
+  {"number":36,"title":"fix: handle empty commit messages in git log","state":"OPEN","author":{"login":"contributor3"},"createdAt":"2026-07-01T10:00:00Z","headRefName":"fix/empty-commit"},
+  {"number":35,"title":"fix: kubectl-describe filter drops critical annotations","state":"OPEN","author":{"login":"contributor3"},"createdAt":"2026-07-01T09:30:00Z","headRefName":"fix/kube-describe"},
+  {"number":34,"title":"docs: expand contributing guide","state":"OPEN","author":{"login":"docwriter"},"createdAt":"2026-06-30T15:00:00Z","headRefName":"docs/contributing"},
+  {"number":33,"title":"feat: markdown ingestion for fetch and read","state":"OPEN","author":{"login":"contributor4"},"createdAt":"2026-06-29T11:00:00Z","headRefName":"feat/markdown-fetch"},
+  {"number":32,"title":"feat: add shell completions","state":"OPEN","author":{"login":"contributor5"},"createdAt":"2026-06-29T10:00:00Z","headRefName":"feat/completions"},
+  {"number":31,"title":"chore: bump go to 1.26","state":"OPEN","author":{"login":"maintainer"},"createdAt":"2026-06-27T09:00:00Z","headRefName":"chore/go-version"}
+]

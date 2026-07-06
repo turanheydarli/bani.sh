@@ -1,0 +1,21 @@
+NAME                          READY   STATUS             RESTARTS       AGE
+api-server-7f8b4d9c6-abcde    2/2     Running            0              5d3h
+api-server-7f8b4d9c6-fghij    2/2     Running            0              5d3h
+api-server-7f8b4d9c6-klmno    2/2     Running            2 (3h ago)     5d3h
+api-server-7f8b4d9c6-pqrst    2/2     Running            0              5d3h
+worker-abc-6c9d8f5b7-abcdef   0/1     CrashLoopBackOff   17 (2m ago)    1d
+worker-abc-6c9d8f5b7-ghijkl   1/1     Running            0              1d
+worker-abc-6c9d8f5b7-mnopqr   1/1     Running            0              1d
+worker-abc-6c9d8f5b7-stuvwx   1/1     Running            0              1d
+scheduler-88f5d4c9b-efghi     1/1     Running            0              12d
+scheduler-88f5d4c9b-jklmn     1/1     Running            0              12d
+scheduler-88f5d4c9b-opqrs     1/1     Running            0              12d
+scheduler-88f5d4c9b-tuvwx     1/1     Running            0              12d
+redis-primary-0               1/1     Running            0              30d
+redis-replica-0               1/1     Running            0              30d
+redis-replica-1               1/1     Running            0              30d
+metrics-collector-abc123      1/1     Running            0              45d
+metrics-collector-def456      1/1     Running            0              45d
+metrics-collector-ghi789      1/1     Running            0              45d
+metrics-collector-jkl012      1/1     Running            0              45d
+metrics-collector-mno345      1/1     Running            0              45d

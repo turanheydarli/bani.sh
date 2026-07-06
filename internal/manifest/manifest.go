@@ -35,11 +35,14 @@ type FilterDef struct {
 }
 
 // RewriteDef swaps a command for a machine-readable variant before it runs.
+// Announce is opt-in: surface a [banish → ...] audit line when the rule
+// materially changes output shape (JSON preferred over table).
 type RewriteDef struct {
-	Name   string
-	Match  string
-	Unless []string
-	To     string
+	Name     string
+	Match    string
+	Unless   []string
+	To       string
+	Announce bool
 }
 
 // ServerDecl declares an MCP server.

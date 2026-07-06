@@ -218,6 +218,7 @@ func newInterpreter() *interpreter.Interpreter {
 		for _, rw := range loader.Rewrites() {
 			rewrites = append(rewrites, compact.RewriteRule{
 				Name: rw.Name, Match: rw.Match, Unless: rw.Unless, To: rw.To,
+				Announce: rw.Announce,
 			})
 		}
 	}

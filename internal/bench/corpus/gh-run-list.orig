@@ -1,0 +1,10 @@
+completed  success   Merge pull request #42 from turanheydarli/feat/lockfile      CI              main             push    9001    2s   3m30s   2026-07-07T09:00:00Z
+completed  failure   feat(compact): lockfile-aware semantic diff renderer         CI              feat/lockfile    push    9000    4s   4m12s   2026-07-06T18:00:00Z
+in_progress          Publish v1.2.3                                                Release         main             push    8999    -    -       2026-07-07T11:45:00Z
+completed  success   ci: dedicated bench job with summary and README freshness   CI              feat/bench-suite push    8998    3s   3m01s   2026-07-06T15:20:00Z
+completed  success   feat: aggregate README savings rows by tool group           CI              feat/bench-suite push    8997    3s   2m45s   2026-07-06T14:10:00Z
+completed  cancelled feat: token-savings benchmark suite                          CI              feat/bench-suite push    8996    3s   0s      2026-07-06T13:00:00Z
+completed  success   Update README                                                CI              main             push    8995    2s   2m10s   2026-07-05T22:00:00Z
+completed  success   Release v1.2.2                                               Release         main             push    8994    5s   6m00s   2026-07-05T21:00:00Z
+completed  success   Merge pull request #40 from contributor1/feat/dotnet         CI              main             push    8993    2s   3m20s   2026-07-05T15:30:00Z
+completed  failure   feat: dotnet builtin filter pack                             CI              feat/dotnet      push    8992    3s   4m40s   2026-07-03T14:20:00Z

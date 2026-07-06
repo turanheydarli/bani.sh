@@ -29,6 +29,34 @@
 !unless --oneline --format --pretty -p --patch --stat --numstat --shortstat --graph -n --follow -L -S -G
 !to git log --oneline -20
 
+# JSON-preferring wrappers (see issue #15). Native renderers in
+# internal/compact/native_*.go parse the JSON output into a compact table.
+# Each rewrite only fires when the caller has not already asked for an
+# output format -- the !unless guard preserves --output=wide, --json custom
+# field lists, etc. Global disable: BANISH_NO_REWRITE=1.
+#
+# These rules opt in to !announce because they materially change output
+# shape (JSON preferred over human table). Cosmetic rewrites above (git
+# status --porcelain -b) stay silent -- see rewrite.go RewriteRule.Announce.
+
+!rewrite kubectl-get-json
+!match kubectl get
+!unless -o --output -o=json -o=yaml -o=wide -o=name -o=custom-columns -o=jsonpath -o=go-template --watch -w
+!to kubectl get -o json
+!announce true
+
+!rewrite gh-pr-list-json
+!match gh pr list
+!unless --json --template --jq -q
+!to "gh pr list --json number,title,state,author,createdAt,headRefName"
+!announce true
+
+!rewrite gh-run-list-json
+!match gh run list
+!unless --json --template --jq -q
+!to "gh run list --json databaseId,name,status,conclusion,displayTitle,createdAt"
+!announce true
+
 !filter git-status
 !match git status
 !max-lines 50
