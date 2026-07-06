@@ -1,0 +1,6 @@
+=== Cargo.lock +12 -12
+(semantic diff via banish)
+  + added:    anyhow@1.0.75
+  ↑ upgraded: serde 1.0.150 → 1.0.160, serde_derive 1.0.150 → 1.0.160, tokio 1.28.0 → 1.35.0
+  - removed:  old-crate@0.1.0
+  [set BANISH_LOCKFILE_FULL=1 for the raw diff]
