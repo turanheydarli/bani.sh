@@ -32,7 +32,9 @@ or the bench corpus itself - always run the benchmark suite:
 - If the change intentionally alters filter output, regenerate goldens with
   `go test ./internal/bench/ -update`, then review the golden diffs before
   committing - never commit regenerated goldens unreviewed.
-- If measured savings changed, refresh the README table with
-  `go run ./cmd/banish bench --write-readme README.md` and commit it.
+- The README savings table refreshes automatically on merge to main (the
+  update-readme CI job); refresh locally with
+  `go run ./cmd/banish bench --write-readme README.md` only to preview.
 - New filters should land with a corpus fixture (raw output + manifest entry
-  in internal/bench/corpus/corpus.json with min_save_pct and must_keep).
+  in internal/bench/corpus/corpus.json with min_save_pct, must_keep, and a
+  general `group` label for the README row).
