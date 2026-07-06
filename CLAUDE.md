@@ -20,3 +20,19 @@ banish provides:
 
 If a BANISH file exists in the project root, read it for project-specific
 verbs and configuration.
+
+### Benchmark rule
+
+After changing anything that affects compaction - .bsh filter packs
+(internal/extension/builtin/, defaults.bsh), internal/compact/, rewrites,
+or the bench corpus itself - always run the benchmark suite:
+
+- `go test ./internal/bench/` must pass (goldens, savings thresholds,
+  must-keep patterns).
+- If the change intentionally alters filter output, regenerate goldens with
+  `go test ./internal/bench/ -update`, then review the golden diffs before
+  committing - never commit regenerated goldens unreviewed.
+- If measured savings changed, refresh the README table with
+  `go run ./cmd/banish bench --write-readme README.md` and commit it.
+- New filters should land with a corpus fixture (raw output + manifest entry
+  in internal/bench/corpus/corpus.json with min_save_pct and must_keep).
