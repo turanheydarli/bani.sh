@@ -1,0 +1,34 @@
+!extension dotnet v:1.0
+
+!verb dnb
+!expand exec dotnet build
+!help "dotnet build"
+
+!verb dnt
+!expand exec dotnet test
+!help "dotnet test"
+
+!filter dotnet-build
+!match dotnet build
+!tally "\s->\s.*\.dll$" "== {n} projects built"
+!drop "\s->\s.*\.dll$"
+!drop "Determining projects to restore"
+!drop "^\s*Restored "
+!drop "^$"
+!max-lines 50
+!overflow "+{n} more lines"
+
+# per-test "Passed TestName" lines are tallied away; "Passed!" summary and
+# any "Failed" lines survive.
+
+!filter dotnet-test
+!match dotnet test
+!tally "^\s*Passed\s" "== {n} tests passed"
+!drop "^\s*Passed\s"
+!drop "^$"
+!max-lines 60
+!overflow "+{n} more lines"
+
+!filter dotnet-restore
+!match dotnet restore
+!compact "tail -3"
