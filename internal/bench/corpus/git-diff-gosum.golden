@@ -1,0 +1,6 @@
+=== go.sum +6 -6
+(semantic diff via banish)
+  + added:    golang.org/x/mod@v0.14.0
+  ↑ upgraded: github.com/spf13/cobra v1.7.0 → v1.8.0, golang.org/x/sys v0.10.0 → v0.15.0
+  - removed:  github.com/mattn/go-isatty@v0.0.19
+  [set BANISH_LOCKFILE_FULL=1 for the raw diff]

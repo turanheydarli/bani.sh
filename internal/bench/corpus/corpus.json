@@ -251,5 +251,60 @@
   ],
   "readme": true,
   "group": "JSON-preferred (kubectl / gh)"
+  "name": "git-diff-packagelock",
+  "display": "git diff package-lock.json",
+  "command": "git diff",
+  "min_save_pct": 80,
+  "must_keep": [
+   "express 4\\.19\\.0 → 4\\.19\\.2",
+   "react 18\\.2\\.0 → 18\\.3\\.1",
+   "typescript@5\\.4\\.0",
+   "lodash@4\\.17\\.21"
+  ],
+  "readme": true,
+  "group": "lockfile diffs"
+ },
+ {
+  "name": "git-diff-cargolock",
+  "display": "git diff Cargo.lock",
+  "command": "git diff",
+  "min_save_pct": 60,
+  "must_keep": [
+   "anyhow@1\\.0\\.75",
+   "serde 1\\.0\\.150 → 1\\.0\\.160",
+   "tokio 1\\.28\\.0 → 1\\.35\\.0",
+   "old-crate@0\\.1\\.0"
+  ],
+  "readme": true,
+  "group": "lockfile diffs"
+ },
+ {
+  "name": "git-diff-yarnlock",
+  "display": "git diff yarn.lock",
+  "command": "git diff",
+  "min_save_pct": 75,
+  "must_keep": [
+   "@types/node 20\\.0\\.0 → 20\\.11\\.0",
+   "express 4\\.19\\.0 → 4\\.19\\.2",
+   "cors@2\\.8\\.5",
+   "typescript@5\\.4\\.0",
+   "lodash@4\\.17\\.21"
+  ],
+  "readme": true,
+  "group": "lockfile diffs"
+ },
+ {
+  "name": "git-diff-gosum",
+  "display": "git diff go.sum",
+  "command": "git diff",
+  "min_save_pct": 60,
+  "must_keep": [
+   "github\\.com/spf13/cobra v1\\.7\\.0 → v1\\.8\\.0",
+   "golang\\.org/x/sys v0\\.10\\.0 → v0\\.15\\.0",
+   "golang\\.org/x/mod@v0\\.14\\.0",
+   "github\\.com/mattn/go-isatty@v0\\.0\\.19"
+  ],
+  "readme": true,
+  "group": "lockfile diffs"
  }
 ]
