@@ -67,9 +67,12 @@ func firstToken(s string) string {
 }
 
 // containsBashFlags checks for --flag or -x patterns that indicate bash syntax.
-// Banish uses key:value modifiers, not dashed flags.
+// Banish uses key:value modifiers, not dashed flags. Fields are split quote
+// aware: a dash-word inside a "..." string (e.g. a quoted path like
+// "notes -draft.txt") is part of a single target token and must not be mistaken
+// for a bash flag.
 func containsBashFlags(s string) bool {
-	parts := strings.Fields(s)
+	parts := quoteAwareFields(s)
 	for _, p := range parts[1:] { // skip first word (the command name)
 		if strings.HasPrefix(p, "--") {
 			return true
@@ -80,6 +83,38 @@ func containsBashFlags(s string) bool {
 		}
 	}
 	return false
+}
+
+// quoteAwareFields splits s on whitespace like strings.Fields, but keeps a
+// double-quoted span as part of a single field so its interior is never scanned
+// as separate tokens. A backslash escapes the next byte (matching the lexer).
+func quoteAwareFields(s string) []string {
+	var fields []string
+	var cur strings.Builder
+	inQuote := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c == '\\' && i+1 < len(s):
+			cur.WriteByte(c)
+			i++
+			cur.WriteByte(s[i])
+		case c == '"':
+			inQuote = !inQuote
+			cur.WriteByte(c)
+		case (c == ' ' || c == '\t' || c == '\n') && !inQuote:
+			if cur.Len() > 0 {
+				fields = append(fields, cur.String())
+				cur.Reset()
+			}
+		default:
+			cur.WriteByte(c)
+		}
+	}
+	if cur.Len() > 0 {
+		fields = append(fields, cur.String())
+	}
+	return fields
 }
 
 func isLetter(b byte) bool {

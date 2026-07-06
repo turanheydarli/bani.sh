@@ -238,6 +238,21 @@ func (g *GlobLiteral) expressionNode()      {}
 func (g *GlobLiteral) TokenLiteral() string { return g.Token.Literal }
 func (g *GlobLiteral) String() string       { return g.Value }
 
+// RawValue returns the underlying value of an expression as written, without
+// re-serialization. StringLiteral.String() re-adds surrounding quotes (and does
+// not escape), which corrupts a value that is later spliced into a shell command
+// or matched against the filesystem; every other literal node's String() already
+// returns its raw Value. This is the one accessor target consumers should use.
+func RawValue(e Expression) string {
+	if e == nil {
+		return ""
+	}
+	if s, ok := e.(*StringLiteral); ok {
+		return s.Value
+	}
+	return e.String()
+}
+
 // VariableRef represents a $name reference.
 type VariableRef struct {
 	Token token.Token

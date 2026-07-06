@@ -204,13 +204,16 @@ func makeExtensionHandler(v VerbDef) interpreter.VerbHandler {
 			return interpreter.NewResult(fmt.Sprintf("verb %s: no expand defined", v.Name)), nil
 		}
 
-		// Build the expansion with argument substitution.
+		// Build the expansion with argument substitution. Substituted values are
+		// shell-quoted: the expand template is a shell command run via sh -c, so
+		// an unquoted value like `a; rm -rf .` would inject commands. Quoting
+		// forces every value to be a single literal argument.
 		expand := v.Expand
 		if cmd.Target != nil {
-			expand = strings.ReplaceAll(expand, "$1", cmd.Target.String())
+			expand = strings.ReplaceAll(expand, "$1", shell.Quote(ast.RawValue(cmd.Target)))
 		}
 		for _, m := range cmd.Modifiers {
-			expand = strings.ReplaceAll(expand, "$"+m.Key, m.Value)
+			expand = strings.ReplaceAll(expand, "$"+m.Key, shell.Quote(m.Value))
 		}
 
 		// Strip leading "exec " prefix if present -- it is a hint that

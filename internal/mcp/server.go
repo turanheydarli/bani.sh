@@ -12,6 +12,33 @@ import (
 	"go.banish.sh/banish/internal/interpreter"
 )
 
+// bshQuote encodes s as a .bsh double-quoted string. It escapes exactly the
+// characters the lexer's readString decodes (" \ newline tab) and passes every
+// other byte through literally, so the value the lexer produces is byte-for-byte
+// equal to s. (fmt %q cannot be used: it emits \r, \xNN, \uNNNN escapes that the
+// lexer does not decode, corrupting values with control or non-UTF-8 bytes.)
+func bshQuote(s string) string {
+	var b strings.Builder
+	b.Grow(len(s) + 2)
+	b.WriteByte('"')
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '"':
+			b.WriteString(`\"`)
+		case '\\':
+			b.WriteString(`\\`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\t':
+			b.WriteString(`\t`)
+		default:
+			b.WriteByte(s[i])
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
+}
+
 // Server exposes banish verbs as MCP tools via JSON-RPC over stdio.
 type Server struct {
 	interp *interpreter.Interpreter
@@ -106,19 +133,21 @@ func (s *Server) handleToolsCall(ctx context.Context, req *Request) *Response {
 		}
 	} else {
 		cmd = verb
-		// First positional arg (e.g. "path" for ls/read). Quote it so values that
-		// contain the modifier separator ':' - notably URLs like https://host - are
-		// parsed as a single string target instead of a key:value modifier.
+		// First positional arg (e.g. "path" for ls/read). Quote it as a .bsh
+		// string so values containing the modifier separator ':' (URLs), spaces,
+		// or dashes are parsed as a single target, not a key:value modifier or a
+		// bash flag.
 		for _, key := range []string{"path", "url", "target", "name"} {
 			if v, ok := params.Arguments[key]; ok {
-				cmd += fmt.Sprintf(" %q", fmt.Sprintf("%v", v))
+				cmd += " " + bshQuote(fmt.Sprint(v))
 				delete(params.Arguments, key)
 				break
 			}
 		}
-		// Remaining args as modifiers
+		// Remaining args as modifiers. The value is quoted for the same reason -
+		// a modifier value with a space or ':' would otherwise break the parse.
 		for k, v := range params.Arguments {
-			cmd += fmt.Sprintf(" %s:%v", k, v)
+			cmd += fmt.Sprintf(" %s:%s", k, bshQuote(fmt.Sprint(v)))
 		}
 	}
 
