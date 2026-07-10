@@ -1,0 +1,49 @@
+[
+  {
+    "authorization": {"action": "Microsoft.Compute/virtualMachines/write", "scope": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Compute/virtualMachines/prod-web-1"},
+    "caller": "alice.ops@example.com",
+    "channels": "Operation",
+    "claims": {"aud": "https://management.core.windows.net/", "iss": "https://sts.windows.net/tenant/", "iat": "1720349400", "nbf": "1720349400", "exp": "1720353000", "http://schemas.microsoft.com/claims/authnclassreference": "1", "aio": "abc", "appid": "aaaa", "appidacr": "2", "http://schemas.microsoft.com/2012/01/devicecontext/claims/identifier": "device-id", "e_exp": "262800", "http://schemas.microsoft.com/identity/claims/identityprovider": "https://sts.windows.net/tenant/", "http://schemas.microsoft.com/identity/claims/objectidentifier": "user-oid", "onprem_sid": "S-1-5-21", "puid": "10032000ABCDEF", "rh": "0.AR", "scp": "user_impersonation", "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier": "user-nameid", "http://schemas.microsoft.com/identity/claims/tenantid": "tenant-id", "http://schemas.microsoft.com/ws/2008/06/identity/claims/wids": "wids", "wid": "abc", "wids2": "def"},
+    "correlationId": "abc-def-123",
+    "description": "",
+    "eventDataId": "aaaa-bbbb-cccc-1",
+    "eventName": {"localizedValue": "End request", "value": "EndRequest"},
+    "eventTimestamp": "2026-07-07T11:30:22.000000+00:00",
+    "operationName": {"localizedValue": "Create or Update Virtual Machine", "value": "Microsoft.Compute/virtualMachines/write"},
+    "resourceGroupName": "rg-prod",
+    "status": {"localizedValue": "Succeeded", "value": "Succeeded"}
+  },
+  {
+    "caller": "bob.dev@example.com",
+    "correlationId": "def-ghi-456",
+    "eventTimestamp": "2026-07-07T11:15:10.000000+00:00",
+    "operationName": {"localizedValue": "Restart Virtual Machine", "value": "Microsoft.Compute/virtualMachines/restart/action"},
+    "resourceGroupName": "rg-staging",
+    "status": {"localizedValue": "Succeeded", "value": "Succeeded"}
+  },
+  {
+    "caller": "alice.ops@example.com",
+    "correlationId": "ghi-jkl-789",
+    "eventTimestamp": "2026-07-07T10:45:00.000000+00:00",
+    "operationName": {"localizedValue": "Delete Managed Disk", "value": "Microsoft.Compute/disks/delete"},
+    "resourceGroupName": "rg-prod",
+    "status": {"localizedValue": "Failed", "value": "Failed"},
+    "subStatus": {"localizedValue": "Conflict", "value": "Conflict"}
+  },
+  {
+    "caller": "service-principal-ci",
+    "correlationId": "jkl-mno-012",
+    "eventTimestamp": "2026-07-07T09:00:00.000000+00:00",
+    "operationName": {"localizedValue": "Create or Update Web App", "value": "Microsoft.Web/sites/write"},
+    "resourceGroupName": "rg-prod",
+    "status": {"localizedValue": "Succeeded", "value": "Succeeded"}
+  },
+  {
+    "caller": "carol.security@example.com",
+    "correlationId": "mno-pqr-345",
+    "eventTimestamp": "2026-07-07T08:22:00.000000+00:00",
+    "operationName": {"localizedValue": "Update Key Vault access policy", "value": "Microsoft.KeyVault/vaults/accessPolicies/write"},
+    "resourceGroupName": "rg-prod",
+    "status": {"localizedValue": "Succeeded", "value": "Succeeded"}
+  }
+]

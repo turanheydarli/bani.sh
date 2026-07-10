@@ -1,0 +1,5 @@
+prod-web-1	rg-prod	eastus	Standard_D2s_v3
+prod-worker-1	rg-prod	eastus	Standard_D4s_v3
+prod-worker-2	rg-prod	eastus	Standard_D4s_v3
+staging-web-1	rg-staging	westus2	Standard_D2s_v3
+dev-sandbox-alice	rg-dev	northeurope	Standard_B2s

@@ -1,0 +1,6 @@
+4 results
+NAME             ID                                                                                             TENANTID        RESOURCEGROUP  LOCATION     PROVISIONINGSTATE
+kv-prod          /subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.KeyVault/vaults/kv-prod          aaaa-bbbb-cccc  rg-prod        eastus       Succeeded
+kv-prod-secrets  /subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.KeyVault/vaults/kv-prod-secrets                  rg-prod        eastus       Succeeded
+kv-staging       /subscriptions/xxx/resourceGroups/rg-staging/providers/Microsoft.KeyVault/vaults/kv-staging                    rg-staging     westus2      Succeeded
+kv-dev-sandbox   /subscriptions/xxx/resourceGroups/rg-dev/providers/Microsoft.KeyVault/vaults/kv-dev-sandbox                    rg-dev         northeurope  Updating

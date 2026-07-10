@@ -1,0 +1,5 @@
+prod-api	rg-prod	Running	prod-api.azurewebsites.net	app,linux
+prod-worker	rg-prod	Running	prod-worker.azurewebsites.net	functionapp,linux
+staging-api	rg-staging	Running	staging-api.azurewebsites.net	app,linux
+docs-site	rg-prod	Running	docs-site.azurewebsites.net	app
+legacy-cron	rg-prod	Stopped	legacy-cron.azurewebsites.net	app,linux
