@@ -28,6 +28,12 @@ var nativeRenderers = []nativeRenderer{
 	{"kubectl-get-json", "kubectl get", renderKubectlGet},
 	{"gh-pr-list-json", "gh pr list", renderGHPRList},
 	{"gh-run-list-json", "gh run list", renderGHRunList},
+	// gcloud is the shortest match by design: the longest-prefix sort in
+	// init puts it last, so any service-specific native renderer we add
+	// later still wins. This catches every gcloud command whose output is
+	// JSON -- either because no hand-crafted rewrite in gcloud.bsh covered
+	// it, or the caller opted into JSON with --format=json.
+	{"gcloud-json", "gcloud", renderGcloudJSON},
 }
 
 func init() {
