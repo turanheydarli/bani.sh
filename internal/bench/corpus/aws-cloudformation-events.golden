@@ -1,0 +1,8 @@
+[banish → aws cloudformation describe-stack-events --query 'StackEvents[].[Timestamp,LogicalResourceId,ResourceStatus,ResourceStatusReason]' --output text --no-cli-pager]
+2026-07-07T11:30:22.123Z	prod-api-services	UPDATE_COMPLETE	None
+2026-07-07T11:29:58.891Z	OrdersApiLambda	UPDATE_COMPLETE	None
+2026-07-07T11:29:41.234Z	OrdersApiLambda	UPDATE_IN_PROGRESS	Requested update required the provider to create a new physical resource
+2026-07-07T11:29:15.667Z	OrdersApiRestApi	UPDATE_COMPLETE	None
+2026-07-07T11:28:42.100Z	OrdersTable	CREATE_FAILED	Resource creation cancelled
+2026-07-07T11:28:15.850Z	OrdersTable	CREATE_IN_PROGRESS	Resource creation Initiated
+2026-07-07T11:27:00.000Z	prod-api-services	UPDATE_IN_PROGRESS	User Initiated

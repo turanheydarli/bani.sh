@@ -1,0 +1,6 @@
+[banish → aws ec2 describe-instances --query 'Reservations[].Instances[].[InstanceId,State.Name,InstanceType,PrivateIpAddress,PublicIpAddress]' --output text --no-cli-pager]
+i-0abc123def456789a	running	t3.medium	10.0.1.15	54.203.15.22
+i-0def456789abc1234	running	t3.small	10.0.1.42	None
+i-0aaa111bbb222ccc3	stopped	m5.large	10.0.2.10	None
+i-0ccc333ddd444eee5	running	c5.xlarge	10.0.1.88	18.234.10.5
+i-0eee555fff666ggg7	pending	t3.medium	10.0.2.20	None

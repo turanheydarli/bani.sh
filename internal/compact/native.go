@@ -28,6 +28,18 @@ var nativeRenderers = []nativeRenderer{
 	{"kubectl-get-json", "kubectl get", renderKubectlGet},
 	{"gh-pr-list-json", "gh pr list", renderGHPRList},
 	{"gh-run-list-json", "gh run list", renderGHRunList},
+	// az is the shortest match by design: the longest-prefix sort in init
+	// puts it last, so any service-specific native renderer we add later
+	// still wins. This catches every Azure CLI command whose output is
+	// JSON -- either because no hand-crafted rewrite in az.bsh covered it,
+	// or the caller opted into JSON with --output json / --output=jsonc.
+	{"az-json", "az", renderAzJSON},
+	// aws is the shortest match by design: the longest-prefix sort in init
+	// puts it last, so any service-specific native renderer we add later
+	// still wins. This catches every AWS command whose output is JSON --
+	// either because no hand-crafted rewrite in aws.bsh covered it, or the
+	// caller opted into JSON with --output json / --output=json.
+	{"aws-json", "aws", renderAWSJSON},
 	// gcloud is the shortest match by design: the longest-prefix sort in
 	// init puts it last, so any service-specific native renderer we add
 	// later still wins. This catches every gcloud command whose output is

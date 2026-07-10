@@ -1,0 +1,82 @@
+{
+    "StackEvents": [
+        {
+            "StackId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "EventId": "abc123-01",
+            "StackName": "prod-api-services",
+            "LogicalResourceId": "prod-api-services",
+            "PhysicalResourceId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "ResourceType": "AWS::CloudFormation::Stack",
+            "Timestamp": "2026-07-07T11:30:22.123Z",
+            "ResourceStatus": "UPDATE_COMPLETE",
+            "ResourceStatusReason": "",
+            "ClientRequestToken": "console-abcdef"
+        },
+        {
+            "StackId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "EventId": "abc123-02",
+            "StackName": "prod-api-services",
+            "LogicalResourceId": "OrdersApiLambda",
+            "PhysicalResourceId": "prod-api-services-OrdersApiLambda-ABC123DEF456",
+            "ResourceType": "AWS::Lambda::Function",
+            "Timestamp": "2026-07-07T11:29:58.891Z",
+            "ResourceStatus": "UPDATE_COMPLETE",
+            "ResourceStatusReason": ""
+        },
+        {
+            "StackId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "EventId": "abc123-03",
+            "StackName": "prod-api-services",
+            "LogicalResourceId": "OrdersApiLambda",
+            "PhysicalResourceId": "prod-api-services-OrdersApiLambda-ABC123DEF456",
+            "ResourceType": "AWS::Lambda::Function",
+            "Timestamp": "2026-07-07T11:29:41.234Z",
+            "ResourceStatus": "UPDATE_IN_PROGRESS",
+            "ResourceStatusReason": "Requested update required the provider to create a new physical resource"
+        },
+        {
+            "StackId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "EventId": "abc123-04",
+            "StackName": "prod-api-services",
+            "LogicalResourceId": "OrdersApiRestApi",
+            "PhysicalResourceId": "abcdef1234",
+            "ResourceType": "AWS::ApiGateway::RestApi",
+            "Timestamp": "2026-07-07T11:29:15.667Z",
+            "ResourceStatus": "UPDATE_COMPLETE",
+            "ResourceStatusReason": ""
+        },
+        {
+            "StackId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "EventId": "abc123-05",
+            "StackName": "prod-api-services",
+            "LogicalResourceId": "OrdersTable",
+            "PhysicalResourceId": "prod-api-services-OrdersTable-XYZ",
+            "ResourceType": "AWS::DynamoDB::Table",
+            "Timestamp": "2026-07-07T11:28:42.100Z",
+            "ResourceStatus": "CREATE_FAILED",
+            "ResourceStatusReason": "Resource creation cancelled"
+        },
+        {
+            "StackId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "EventId": "abc123-06",
+            "StackName": "prod-api-services",
+            "LogicalResourceId": "OrdersTable",
+            "PhysicalResourceId": "",
+            "ResourceType": "AWS::DynamoDB::Table",
+            "Timestamp": "2026-07-07T11:28:15.850Z",
+            "ResourceStatus": "CREATE_IN_PROGRESS",
+            "ResourceStatusReason": "Resource creation Initiated"
+        },
+        {
+            "StackId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "EventId": "abc123-07",
+            "StackName": "prod-api-services",
+            "LogicalResourceId": "prod-api-services",
+            "PhysicalResourceId": "arn:aws:cloudformation:us-east-1:111122223333:stack/prod-api-services/12345678-abcd-1234-abcd-123456789012",
+            "ResourceType": "AWS::CloudFormation::Stack",
+            "Timestamp": "2026-07-07T11:27:00.000Z",
+            "ResourceStatus": "UPDATE_IN_PROGRESS",
+            "ResourceStatusReason": "User Initiated"
+        }
+    ]
+}

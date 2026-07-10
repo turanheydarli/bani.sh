@@ -1,0 +1,6 @@
+[banish → az monitor activity-log list --query '[].[operationName.value,status.value,eventTimestamp,caller]' --output tsv]
+Microsoft.Compute/virtualMachines/write	Succeeded	2026-07-07T11:30:22.000000+00:00	alice.ops@example.com
+Microsoft.Compute/virtualMachines/restart/action	Succeeded	2026-07-07T11:15:10.000000+00:00	bob.dev@example.com
+Microsoft.Compute/disks/delete	Failed	2026-07-07T10:45:00.000000+00:00	alice.ops@example.com
+Microsoft.Web/sites/write	Succeeded	2026-07-07T09:00:00.000000+00:00	service-principal-ci
+Microsoft.KeyVault/vaults/accessPolicies/write	Succeeded	2026-07-07T08:22:00.000000+00:00	carol.security@example.com

@@ -215,7 +215,7 @@
    "api-server-7f8b4d9c6-abcde",
    "worker-abc-6c9d8f5b7-abcdef",
    "CrashLoopBackOff",
-   "\\[banish →",
+   "\\[banish \u2192",
    "-o json"
   ],
   "readme": true,
@@ -230,7 +230,7 @@
    "#42",
    "turanheydarli",
    "feat/lockfile-diff-renderer",
-   "\\[banish →",
+   "\\[banish \u2192",
    "--json"
   ],
   "readme": true,
@@ -246,7 +246,7 @@
    "success",
    "failure",
    "Release",
-   "\\[banish →",
+   "\\[banish \u2192",
    "--json"
   ],
   "readme": true,
@@ -258,8 +258,8 @@
   "command": "git diff",
   "min_save_pct": 80,
   "must_keep": [
-   "express 4\\.19\\.0 → 4\\.19\\.2",
-   "react 18\\.2\\.0 → 18\\.3\\.1",
+   "express 4\\.19\\.0 \u2192 4\\.19\\.2",
+   "react 18\\.2\\.0 \u2192 18\\.3\\.1",
    "typescript@5\\.4\\.0",
    "lodash@4\\.17\\.21"
   ],
@@ -273,8 +273,8 @@
   "min_save_pct": 60,
   "must_keep": [
    "anyhow@1\\.0\\.75",
-   "serde 1\\.0\\.150 → 1\\.0\\.160",
-   "tokio 1\\.28\\.0 → 1\\.35\\.0",
+   "serde 1\\.0\\.150 \u2192 1\\.0\\.160",
+   "tokio 1\\.28\\.0 \u2192 1\\.35\\.0",
    "old-crate@0\\.1\\.0"
   ],
   "readme": true,
@@ -286,8 +286,8 @@
   "command": "git diff",
   "min_save_pct": 75,
   "must_keep": [
-   "@types/node 20\\.0\\.0 → 20\\.11\\.0",
-   "express 4\\.19\\.0 → 4\\.19\\.2",
+   "@types/node 20\\.0\\.0 \u2192 20\\.11\\.0",
+   "express 4\\.19\\.0 \u2192 4\\.19\\.2",
    "cors@2\\.8\\.5",
    "typescript@5\\.4\\.0",
    "lodash@4\\.17\\.21"
@@ -301,8 +301,8 @@
   "command": "git diff",
   "min_save_pct": 60,
   "must_keep": [
-   "github\\.com/spf13/cobra v1\\.7\\.0 → v1\\.8\\.0",
-   "golang\\.org/x/sys v0\\.10\\.0 → v0\\.15\\.0",
+   "github\\.com/spf13/cobra v1\\.7\\.0 \u2192 v1\\.8\\.0",
+   "golang\\.org/x/sys v0\\.10\\.0 \u2192 v0\\.15\\.0",
    "golang\\.org/x/mod@v0\\.14\\.0",
    "github\\.com/mattn/go-isatty@v0\\.0\\.19"
   ],
@@ -319,7 +319,7 @@
    "dev-sandbox-alice",
    "TERMINATED",
    "n1-standard-4",
-   "\\[banish →",
+   "\\[banish \u2192",
    "value\\("
   ],
   "readme": true,
@@ -335,7 +335,7 @@
    "staging-main",
    "RECONCILING",
    "1\\.29\\.4-gke\\.1043002",
-   "\\[banish →",
+   "\\[banish \u2192",
    "value\\("
   ],
   "readme": true,
@@ -350,7 +350,7 @@
    "orders-api",
    "auth-validator",
    "orders-api-abc123-uc\\.a\\.run\\.app",
-   "\\[banish →",
+   "\\[banish \u2192",
    "value\\("
   ],
   "readme": true,
@@ -366,7 +366,7 @@
    "legacy-mysql-app",
    "MAINTENANCE",
    "POSTGRES_15",
-   "\\[banish →",
+   "\\[banish \u2192",
    "value\\("
   ],
   "readme": true,
@@ -381,7 +381,7 @@
    "FAILURE",
    "SUCCESS",
    "feat/retries",
-   "\\[banish →",
+   "\\[banish \u2192",
    "value\\("
   ],
   "readme": true,
@@ -400,5 +400,182 @@
   ],
   "readme": true,
   "group": "gcloud (compute, gke, run, sql, builds)"
+ },
+ {
+  "name": "az-vm-list",
+  "display": "az vm list (5 VMs)",
+  "command": "az vm list",
+  "min_save_pct": 85,
+  "must_keep": [
+   "prod-web-1",
+   "dev-sandbox-alice",
+   "Standard_D2s_v3",
+   "\\[banish \u2192",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-storage-account-list",
+  "display": "az storage account list (4 accts)",
+  "command": "az storage account list",
+  "min_save_pct": 85,
+  "must_keep": [
+   "prodartifacts",
+   "devsandboxstore",
+   "Standard_GRS",
+   "\\[banish \u2192",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-webapp-list",
+  "display": "az webapp list (5 apps)",
+  "command": "az webapp list",
+  "min_save_pct": 75,
+  "must_keep": [
+   "prod-api",
+   "legacy-cron",
+   "Stopped",
+   "\\[banish \u2192",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-aks-list",
+  "display": "az aks list (3 clusters)",
+  "command": "az aks list",
+  "min_save_pct": 80,
+  "must_keep": [
+   "aks-prod-main",
+   "aks-staging",
+   "Upgrading",
+   "1\\.29\\.4",
+   "\\[banish \u2192",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-activity-log",
+  "display": "az monitor activity-log list (5 events)",
+  "command": "az monitor activity-log list",
+  "min_save_pct": 75,
+  "must_keep": [
+   "Microsoft\\.Compute/disks/delete",
+   "Failed",
+   "alice\\.ops@example\\.com",
+   "\\[banish \u2192",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-json-native",
+  "display": "az keyvault list --output json (4 vaults)",
+  "command": "az keyvault list --output json",
+  "min_save_pct": 55,
+  "must_keep": [
+   "kv-prod",
+   "kv-dev-sandbox",
+   "Succeeded",
+   "Updating"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "aws-ec2-describe-instances",
+  "display": "aws ec2 describe-instances (5 instances)",
+  "command": "aws ec2 describe-instances",
+  "min_save_pct": 90,
+  "must_keep": [
+   "i-0abc123def456789a",
+   "i-0eee555fff666ggg7",
+   "running",
+   "stopped",
+   "\\[banish \u2192",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-lambda-list-functions",
+  "display": "aws lambda list-functions (6 fns)",
+  "command": "aws lambda list-functions",
+  "min_save_pct": 85,
+  "must_keep": [
+   "orders-api-handler",
+   "webhook-receiver-github",
+   "\\[banish \u2192",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-cloudformation-events",
+  "display": "aws cloudformation describe-stack-events",
+  "command": "aws cloudformation describe-stack-events",
+  "min_save_pct": 80,
+  "must_keep": [
+   "CREATE_FAILED",
+   "OrdersTable",
+   "\\[banish \u2192",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-logs-filter-events",
+  "display": "aws logs filter-log-events (10 events)",
+  "command": "aws logs filter-log-events",
+  "min_save_pct": 50,
+  "must_keep": [
+   "ProvisionedThroughputExceededException",
+   "def-req-002",
+   "\\[banish \u2192",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-iam-list-users",
+  "display": "aws iam list-users (6 users)",
+  "command": "aws iam list-users",
+  "min_save_pct": 75,
+  "must_keep": [
+   "alice\\.ops",
+   "ci-deploy-prod",
+   "\\[banish \u2192",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-json-native",
+  "display": "aws eks describe-clusters --output json (4 clusters)",
+  "command": "aws eks describe-clusters --output json",
+  "min_save_pct": 60,
+  "must_keep": [
+   "prod-main",
+   "staging",
+   "dev-team-a",
+   "ACTIVE",
+   "Clusters \\(4\\)"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
  }
 ]

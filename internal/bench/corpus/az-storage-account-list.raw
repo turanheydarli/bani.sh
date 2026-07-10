@@ -1,0 +1,4 @@
+prodartifacts	rg-prod	eastus	StorageV2	Standard_GRS
+prodlogsarchive	rg-prod	eastus	StorageV2	Standard_LRS
+stgweb1	rg-staging	westus2	StorageV2	Standard_LRS
+devsandboxstore	rg-dev	northeurope	BlobStorage	Standard_LRS

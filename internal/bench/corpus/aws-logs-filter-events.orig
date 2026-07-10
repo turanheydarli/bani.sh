@@ -1,0 +1,19 @@
+{
+    "events": [
+        {"logStreamName": "2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890", "timestamp": 1720349400000, "message": "2026-07-07T11:30:00.000Z\tabc-req-001\tINFO\tOrders request received user=u_1234 order=o_5678\n", "ingestionTime": 1720349401234, "eventId": "37892345678901234567890123456789012345678901234567890"},
+        {"logStreamName": "2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890", "timestamp": 1720349400500, "message": "2026-07-07T11:30:00.500Z\tabc-req-001\tINFO\tDynamoDB PutItem table=orders key={\"pk\":\"o_5678\",\"sk\":\"meta\"}\n", "ingestionTime": 1720349401567, "eventId": "37892345678901234567890123456789012345678901234567891"},
+        {"logStreamName": "2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890", "timestamp": 1720349400900, "message": "2026-07-07T11:30:00.900Z\tabc-req-001\tINFO\tSNS publish topic=notifications-prod messageId=abc-msg-01\n", "ingestionTime": 1720349401789, "eventId": "37892345678901234567890123456789012345678901234567892"},
+        {"logStreamName": "2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890", "timestamp": 1720349401200, "message": "2026-07-07T11:30:01.200Z\tabc-req-001\tINFO\tResponse 200 latency_ms=1198\n", "ingestionTime": 1720349401890, "eventId": "37892345678901234567890123456789012345678901234567893"},
+        {"logStreamName": "2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a", "timestamp": 1720349402000, "message": "2026-07-07T11:30:02.000Z\tdef-req-002\tINFO\tOrders request received user=u_9876 order=o_5679\n", "ingestionTime": 1720349402234, "eventId": "37892345678901234567890123456789012345678901234567894"},
+        {"logStreamName": "2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a", "timestamp": 1720349402500, "message": "2026-07-07T11:30:02.500Z\tdef-req-002\tERROR\tDynamoDB ProvisionedThroughputExceededException table=orders retry=1\n", "ingestionTime": 1720349402789, "eventId": "37892345678901234567890123456789012345678901234567895"},
+        {"logStreamName": "2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a", "timestamp": 1720349403000, "message": "2026-07-07T11:30:03.000Z\tdef-req-002\tERROR\tDynamoDB ProvisionedThroughputExceededException table=orders retry=2\n", "ingestionTime": 1720349403234, "eventId": "37892345678901234567890123456789012345678901234567896"},
+        {"logStreamName": "2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a", "timestamp": 1720349403800, "message": "2026-07-07T11:30:03.800Z\tdef-req-002\tERROR\tResponse 500 latency_ms=1798 error=throughput_exceeded\n", "ingestionTime": 1720349404123, "eventId": "37892345678901234567890123456789012345678901234567897"},
+        {"logStreamName": "2026/07/07/[$LATEST]cdef1234567890abcdef1234567890ab", "timestamp": 1720349404200, "message": "2026-07-07T11:30:04.200Z\tghi-req-003\tINFO\tOrders request received user=u_1111 order=o_5680\n", "ingestionTime": 1720349404500, "eventId": "37892345678901234567890123456789012345678901234567898"},
+        {"logStreamName": "2026/07/07/[$LATEST]cdef1234567890abcdef1234567890ab", "timestamp": 1720349404600, "message": "2026-07-07T11:30:04.600Z\tghi-req-003\tINFO\tResponse 200 latency_ms=387\n", "ingestionTime": 1720349404890, "eventId": "37892345678901234567890123456789012345678901234567899"}
+    ],
+    "searchedLogStreams": [
+        {"logStreamName": "2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890", "searchedCompletely": true},
+        {"logStreamName": "2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a", "searchedCompletely": true},
+        {"logStreamName": "2026/07/07/[$LATEST]cdef1234567890abcdef1234567890ab", "searchedCompletely": true}
+    ]
+}

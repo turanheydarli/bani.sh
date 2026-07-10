@@ -1,0 +1,69 @@
+[
+  {
+    "name": "prod-api",
+    "resourceGroup": "rg-prod",
+    "location": "East US",
+    "state": "Running",
+    "kind": "app,linux",
+    "defaultHostName": "prod-api.azurewebsites.net",
+    "enabledHostNames": ["prod-api.azurewebsites.net", "prod-api.scm.azurewebsites.net"],
+    "hostNames": ["prod-api.azurewebsites.net"],
+    "hostNameSslStates": [{"hostType": "Standard", "name": "prod-api.azurewebsites.net", "sslState": "Disabled"}, {"hostType": "Repository", "name": "prod-api.scm.azurewebsites.net", "sslState": "Disabled"}],
+    "id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Web/sites/prod-api",
+    "type": "Microsoft.Web/sites",
+    "identity": {"principalId": "aaaa-bbbb-cccc", "tenantId": "dddd-eeee-ffff", "type": "SystemAssigned"},
+    "reserved": true,
+    "isXenon": false,
+    "hyperV": false,
+    "lastModifiedTimeUtc": "2026-07-05T14:23:00.000000+00:00",
+    "serverFarmId": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Web/serverfarms/asp-prod-linux",
+    "siteConfig": null,
+    "tags": {"Environment": "production", "Owner": "platform-team"}
+  },
+  {
+    "name": "prod-worker",
+    "resourceGroup": "rg-prod",
+    "location": "East US",
+    "state": "Running",
+    "kind": "functionapp,linux",
+    "defaultHostName": "prod-worker.azurewebsites.net",
+    "id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Web/sites/prod-worker",
+    "reserved": true,
+    "lastModifiedTimeUtc": "2026-07-04T10:00:00.000000+00:00",
+    "tags": {"Environment": "production"}
+  },
+  {
+    "name": "staging-api",
+    "resourceGroup": "rg-staging",
+    "location": "West US 2",
+    "state": "Running",
+    "kind": "app,linux",
+    "defaultHostName": "staging-api.azurewebsites.net",
+    "id": "/subscriptions/xxx/resourceGroups/rg-staging/providers/Microsoft.Web/sites/staging-api",
+    "reserved": true,
+    "lastModifiedTimeUtc": "2026-07-01T08:00:00.000000+00:00",
+    "tags": {"Environment": "staging"}
+  },
+  {
+    "name": "docs-site",
+    "resourceGroup": "rg-prod",
+    "location": "East US",
+    "state": "Running",
+    "kind": "app",
+    "defaultHostName": "docs-site.azurewebsites.net",
+    "id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Web/sites/docs-site",
+    "lastModifiedTimeUtc": "2026-06-20T09:00:00.000000+00:00",
+    "tags": {"Environment": "production"}
+  },
+  {
+    "name": "legacy-cron",
+    "resourceGroup": "rg-prod",
+    "location": "East US",
+    "state": "Stopped",
+    "kind": "app,linux",
+    "defaultHostName": "legacy-cron.azurewebsites.net",
+    "id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Web/sites/legacy-cron",
+    "lastModifiedTimeUtc": "2025-11-10T09:00:00.000000+00:00",
+    "tags": {"Environment": "production"}
+  }
+]

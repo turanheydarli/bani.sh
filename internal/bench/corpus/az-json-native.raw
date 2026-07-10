@@ -1,0 +1,60 @@
+[
+  {
+    "name": "kv-prod",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.KeyVault/vaults/kv-prod",
+    "type": "Microsoft.KeyVault/vaults",
+    "properties": {
+        "sku": {"family": "A", "name": "premium"},
+        "tenantId": "aaaa-bbbb-cccc",
+        "vaultUri": "https://kv-prod.vault.azure.net/",
+        "enabledForDeployment": false,
+        "enabledForDiskEncryption": true,
+        "enabledForTemplateDeployment": false,
+        "enableRbacAuthorization": true,
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 90,
+        "provisioningState": "Succeeded"
+    },
+    "tags": {"Environment": "production", "Owner": "platform-team"}
+  },
+  {
+    "name": "kv-prod-secrets",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.KeyVault/vaults/kv-prod-secrets",
+    "properties": {
+        "sku": {"family": "A", "name": "standard"},
+        "vaultUri": "https://kv-prod-secrets.vault.azure.net/",
+        "enableRbacAuthorization": true,
+        "enableSoftDelete": true,
+        "provisioningState": "Succeeded"
+    },
+    "tags": {"Environment": "production", "Purpose": "app-secrets"}
+  },
+  {
+    "name": "kv-staging",
+    "resourceGroup": "rg-staging",
+    "location": "westus2",
+    "id": "/subscriptions/xxx/resourceGroups/rg-staging/providers/Microsoft.KeyVault/vaults/kv-staging",
+    "properties": {
+        "sku": {"family": "A", "name": "standard"},
+        "vaultUri": "https://kv-staging.vault.azure.net/",
+        "provisioningState": "Succeeded"
+    },
+    "tags": {"Environment": "staging"}
+  },
+  {
+    "name": "kv-dev-sandbox",
+    "resourceGroup": "rg-dev",
+    "location": "northeurope",
+    "id": "/subscriptions/xxx/resourceGroups/rg-dev/providers/Microsoft.KeyVault/vaults/kv-dev-sandbox",
+    "properties": {
+        "sku": {"family": "A", "name": "standard"},
+        "vaultUri": "https://kv-dev-sandbox.vault.azure.net/",
+        "provisioningState": "Updating"
+    },
+    "tags": {"Environment": "development"}
+  }
+]
