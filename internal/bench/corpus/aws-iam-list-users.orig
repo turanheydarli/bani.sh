@@ -1,0 +1,57 @@
+{
+    "Users": [
+        {
+            "Path": "/",
+            "UserName": "alice.ops",
+            "UserId": "AIDACKCEVSQ6C2EXAMPLE1",
+            "Arn": "arn:aws:iam::111122223333:user/alice.ops",
+            "CreateDate": "2024-03-15T09:12:44+00:00",
+            "PasswordLastUsed": "2026-07-06T18:22:31+00:00",
+            "Tags": [{"Key": "Team", "Value": "ops"}, {"Key": "CostCenter", "Value": "1042"}]
+        },
+        {
+            "Path": "/",
+            "UserName": "bob.developer",
+            "UserId": "AIDACKCEVSQ6C2EXAMPLE2",
+            "Arn": "arn:aws:iam::111122223333:user/bob.developer",
+            "CreateDate": "2024-06-01T14:45:12+00:00",
+            "PasswordLastUsed": "2026-07-07T09:15:00+00:00",
+            "Tags": [{"Key": "Team", "Value": "platform"}, {"Key": "CostCenter", "Value": "1010"}]
+        },
+        {
+            "Path": "/",
+            "UserName": "carol.security",
+            "UserId": "AIDACKCEVSQ6C2EXAMPLE3",
+            "Arn": "arn:aws:iam::111122223333:user/carol.security",
+            "CreateDate": "2024-01-20T11:00:00+00:00",
+            "PasswordLastUsed": "2026-07-07T10:45:23+00:00",
+            "Tags": [{"Key": "Team", "Value": "security"}]
+        },
+        {
+            "Path": "/service/",
+            "UserName": "ci-deploy-prod",
+            "UserId": "AIDACKCEVSQ6C2EXAMPLE4",
+            "Arn": "arn:aws:iam::111122223333:user/service/ci-deploy-prod",
+            "CreateDate": "2024-01-05T08:30:00+00:00",
+            "Tags": [{"Key": "Purpose", "Value": "ci-cd"}, {"Key": "Managed", "Value": "terraform"}]
+        },
+        {
+            "Path": "/",
+            "UserName": "dave.analyst",
+            "UserId": "AIDACKCEVSQ6C2EXAMPLE5",
+            "Arn": "arn:aws:iam::111122223333:user/dave.analyst",
+            "CreateDate": "2025-02-14T16:22:00+00:00",
+            "PasswordLastUsed": "2026-07-05T14:30:15+00:00",
+            "Tags": [{"Key": "Team", "Value": "data"}]
+        },
+        {
+            "Path": "/",
+            "UserName": "eve.temp",
+            "UserId": "AIDACKCEVSQ6C2EXAMPLE6",
+            "Arn": "arn:aws:iam::111122223333:user/eve.temp",
+            "CreateDate": "2026-06-01T10:00:00+00:00",
+            "Tags": [{"Key": "Team", "Value": "external"}, {"Key": "ExpiresAt", "Value": "2026-09-01"}]
+        }
+    ],
+    "IsTruncated": false
+}
