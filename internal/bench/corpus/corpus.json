@@ -398,5 +398,90 @@
   ],
   "readme": true,
   "group": "az (vm, storage, webapp, aks, activity)"
+  "name": "aws-ec2-describe-instances",
+  "display": "aws ec2 describe-instances (5 instances)",
+  "command": "aws ec2 describe-instances",
+  "min_save_pct": 90,
+  "must_keep": [
+   "i-0abc123def456789a",
+   "i-0eee555fff666ggg7",
+   "running",
+   "stopped",
+   "\\[banish →",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-lambda-list-functions",
+  "display": "aws lambda list-functions (6 fns)",
+  "command": "aws lambda list-functions",
+  "min_save_pct": 85,
+  "must_keep": [
+   "orders-api-handler",
+   "webhook-receiver-github",
+   "\\[banish →",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-cloudformation-events",
+  "display": "aws cloudformation describe-stack-events",
+  "command": "aws cloudformation describe-stack-events",
+  "min_save_pct": 80,
+  "must_keep": [
+   "CREATE_FAILED",
+   "OrdersTable",
+   "\\[banish →",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-logs-filter-events",
+  "display": "aws logs filter-log-events (10 events)",
+  "command": "aws logs filter-log-events",
+  "min_save_pct": 50,
+  "must_keep": [
+   "ProvisionedThroughputExceededException",
+   "def-req-002",
+   "\\[banish →",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-iam-list-users",
+  "display": "aws iam list-users (6 users)",
+  "command": "aws iam list-users",
+  "min_save_pct": 75,
+  "must_keep": [
+   "alice\\.ops",
+   "ci-deploy-prod",
+   "\\[banish →",
+   "--output text"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
+ },
+ {
+  "name": "aws-json-native",
+  "display": "aws eks describe-clusters --output json (4 clusters)",
+  "command": "aws eks describe-clusters --output json",
+  "min_save_pct": 60,
+  "must_keep": [
+   "prod-main",
+   "staging",
+   "dev-team-a",
+   "ACTIVE",
+   "Clusters \\(4\\)"
+  ],
+  "readme": true,
+  "group": "aws (ec2, lambda, cf, logs, iam)"
  }
 ]

@@ -1,0 +1,11 @@
+[banish → aws logs filter-log-events --query 'events[].[timestamp,logStreamName,message]' --output text --no-cli-pager]
+1720349400000	2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890	2026-07-07T11:30:00.000Z	abc-req-001	INFO	Orders request received user=u_1234 order=o_5678
+1720349400500	2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890	2026-07-07T11:30:00.500Z	abc-req-001	INFO	DynamoDB PutItem table=orders key={"pk":"o_5678","sk":"meta"}
+1720349400900	2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890	2026-07-07T11:30:00.900Z	abc-req-001	INFO	SNS publish topic=notifications-prod messageId=abc-msg-01
+1720349401200	2026/07/07/[$LATEST]abcdef1234567890abcdef1234567890	2026-07-07T11:30:01.200Z	abc-req-001	INFO	Response 200 latency_ms=1198
+1720349402000	2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a	2026-07-07T11:30:02.000Z	def-req-002	INFO	Orders request received user=u_9876 order=o_5679
+1720349402500	2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a	2026-07-07T11:30:02.500Z	def-req-002	ERROR	DynamoDB ProvisionedThroughputExceededException table=orders retry=1
+1720349403000	2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a	2026-07-07T11:30:03.000Z	def-req-002	ERROR	DynamoDB ProvisionedThroughputExceededException table=orders retry=2
+1720349403800	2026/07/07/[$LATEST]bcdef1234567890abcdef1234567890a	2026-07-07T11:30:03.800Z	def-req-002	ERROR	Response 500 latency_ms=1798 error=throughput_exceeded
+1720349404200	2026/07/07/[$LATEST]cdef1234567890abcdef1234567890ab	2026-07-07T11:30:04.200Z	ghi-req-003	INFO	Orders request received user=u_1111 order=o_5680
+1720349404600	2026/07/07/[$LATEST]cdef1234567890abcdef1234567890ab	2026-07-07T11:30:04.600Z	ghi-req-003	INFO	Response 200 latency_ms=387

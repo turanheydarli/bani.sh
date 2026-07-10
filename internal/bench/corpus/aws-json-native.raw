@@ -1,0 +1,49 @@
+{
+    "Clusters": [
+        {
+            "Name": "prod-main",
+            "Arn": "arn:aws:eks:us-east-1:111122223333:cluster/prod-main",
+            "CreatedAt": "2025-01-15T10:00:00.000Z",
+            "Version": "1.29",
+            "Status": "ACTIVE",
+            "PlatformVersion": "eks.7",
+            "EndpointConfig": {"PrivateAccess": true, "PublicAccess": false, "PublicAccessCidrs": ["0.0.0.0/0"]},
+            "ResourcesVpcConfig": {"SubnetIds": ["subnet-a", "subnet-b", "subnet-c"], "SecurityGroupIds": ["sg-1"], "ClusterSecurityGroupId": "sg-2", "VpcId": "vpc-0abc"},
+            "KubernetesNetworkConfig": {"ServiceIpv4Cidr": "172.20.0.0/16", "IpFamily": "ipv4"},
+            "Logging": {"ClusterLogging": [{"Types": ["api", "audit"], "Enabled": true}]},
+            "Identity": {"Oidc": {"Issuer": "https://oidc.eks.us-east-1.amazonaws.com/id/ABCDEF"}},
+            "CertificateAuthority": {"Data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUV..."},
+            "RoleArn": "arn:aws:iam::111122223333:role/eks-cluster-role"
+        },
+        {
+            "Name": "prod-analytics",
+            "Arn": "arn:aws:eks:us-east-1:111122223333:cluster/prod-analytics",
+            "CreatedAt": "2025-03-22T14:30:00.000Z",
+            "Version": "1.28",
+            "Status": "ACTIVE",
+            "PlatformVersion": "eks.10",
+            "EndpointConfig": {"PrivateAccess": true, "PublicAccess": true, "PublicAccessCidrs": ["10.0.0.0/8"]},
+            "ResourcesVpcConfig": {"SubnetIds": ["subnet-d", "subnet-e"], "VpcId": "vpc-0def"},
+            "Logging": {"ClusterLogging": [{"Types": ["api"], "Enabled": true}]},
+            "RoleArn": "arn:aws:iam::111122223333:role/eks-cluster-role"
+        },
+        {
+            "Name": "staging",
+            "Arn": "arn:aws:eks:us-east-1:111122223333:cluster/staging",
+            "CreatedAt": "2026-05-01T09:00:00.000Z",
+            "Version": "1.29",
+            "Status": "UPDATING",
+            "PlatformVersion": "eks.3",
+            "RoleArn": "arn:aws:iam::111122223333:role/eks-cluster-role"
+        },
+        {
+            "Name": "dev-team-a",
+            "Arn": "arn:aws:eks:us-east-1:111122223333:cluster/dev-team-a",
+            "CreatedAt": "2026-06-10T11:00:00.000Z",
+            "Version": "1.30",
+            "Status": "CREATING",
+            "PlatformVersion": "eks.1",
+            "RoleArn": "arn:aws:iam::111122223333:role/eks-cluster-role"
+        }
+    ]
+}
