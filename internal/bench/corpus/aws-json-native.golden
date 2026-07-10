@@ -1,0 +1,6 @@
+Clusters (4)
+NAME            VPCID     CLUSTERSECURITYGROUPID  ARN                                                        STATUS    PLATFORMVERSION
+prod-main       vpc-0abc  sg-2                    arn:aws:eks:us-east-1:111122223333:cluster/prod-main       ACTIVE    eks.7
+prod-analytics  vpc-0def                          arn:aws:eks:us-east-1:111122223333:cluster/prod-analytics  ACTIVE    eks.10
+staging                                           arn:aws:eks:us-east-1:111122223333:cluster/staging         UPDATING  eks.3
+dev-team-a                                        arn:aws:eks:us-east-1:111122223333:cluster/dev-team-a      CREATING  eks.1
