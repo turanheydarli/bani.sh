@@ -310,6 +310,96 @@
   "group": "lockfile diffs"
  },
  {
+  "name": "az-vm-list",
+  "display": "az vm list (5 VMs)",
+  "command": "az vm list",
+  "min_save_pct": 85,
+  "must_keep": [
+   "prod-web-1",
+   "dev-sandbox-alice",
+   "Standard_D2s_v3",
+   "\\[banish →",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-storage-account-list",
+  "display": "az storage account list (4 accts)",
+  "command": "az storage account list",
+  "min_save_pct": 85,
+  "must_keep": [
+   "prodartifacts",
+   "devsandboxstore",
+   "Standard_GRS",
+   "\\[banish →",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-webapp-list",
+  "display": "az webapp list (5 apps)",
+  "command": "az webapp list",
+  "min_save_pct": 75,
+  "must_keep": [
+   "prod-api",
+   "legacy-cron",
+   "Stopped",
+   "\\[banish →",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-aks-list",
+  "display": "az aks list (3 clusters)",
+  "command": "az aks list",
+  "min_save_pct": 80,
+  "must_keep": [
+   "aks-prod-main",
+   "aks-staging",
+   "Upgrading",
+   "1\\.29\\.4",
+   "\\[banish →",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-activity-log",
+  "display": "az monitor activity-log list (5 events)",
+  "command": "az monitor activity-log list",
+  "min_save_pct": 75,
+  "must_keep": [
+   "Microsoft\\.Compute/disks/delete",
+   "Failed",
+   "alice\\.ops@example\\.com",
+   "\\[banish →",
+   "--output tsv"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
+  "name": "az-json-native",
+  "display": "az keyvault list --output json (4 vaults)",
+  "command": "az keyvault list --output json",
+  "min_save_pct": 55,
+  "must_keep": [
+   "kv-prod",
+   "kv-dev-sandbox",
+   "Succeeded",
+   "Updating"
+  ],
+  "readme": true,
+  "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
   "name": "aws-ec2-describe-instances",
   "display": "aws ec2 describe-instances (5 instances)",
   "command": "aws ec2 describe-instances",

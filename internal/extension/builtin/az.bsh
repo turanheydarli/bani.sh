@@ -1,0 +1,1120 @@
+!extension az v:1.0
+
+# Azure CLI compaction. Same two-line defense as the AWS pack:
+#
+#   1. Rewrites project verbose JSON responses to a compact tab-separated
+#      form using the tool's own JMESPath dialect (--query) plus --output
+#      tsv. Every rewrite guards on --output / --query / -o so a caller
+#      who asked for a specific shape (json, table, yaml, tsv, jsonc) is
+#      never overridden.
+#
+#   2. Per-service filters cap line length and total lines as a safety
+#      net. They fire after the rewrite (or in place of it, when the
+#      guard tripped), so an --output json response the caller demanded
+#      stays bounded.
+#
+# az supports the same JMESPath dialect as AWS via --query, and its
+# --output tsv mode drops JSON braces + field names, so the compression
+# ratio is comparable: a plain `az vm list` on 20 VMs drops from a
+# multi-KB JSON blob to a few short rows.
+
+# ---------------------------------------------------------------------------
+# Verbs -- short aliases for the highest-frequency listing commands.
+# ---------------------------------------------------------------------------
+
+!verb azgroups
+!expand exec az group list
+!help "List Azure resource groups"
+
+!verb azvms
+!expand exec az vm list
+!help "List VMs across the current subscription"
+
+!verb azaks
+!expand exec az aks list
+!help "List AKS clusters"
+
+!verb azkv
+!expand exec az keyvault list
+!help "List Key Vaults"
+
+!verb azstorage
+!expand exec az storage account list
+!help "List storage accounts"
+
+!verb azwebapps
+!expand exec az webapp list
+!help "List App Service web apps"
+
+!verb azfuncs
+!expand exec az functionapp list
+!help "List Function Apps"
+
+!verb azsql
+!expand exec az sql server list
+!help "List SQL servers"
+
+!verb azcosmos
+!expand exec az cosmosdb list
+!help "List Cosmos DB accounts"
+
+!verb azacr
+!expand exec az acr list
+!help "List Container Registries"
+
+!verb azroles
+!expand exec az role assignment list
+!help "List role assignments in the current scope"
+
+!verb azsub
+!expand exec az account show
+!help "Show the currently selected subscription"
+
+# ---------------------------------------------------------------------------
+# Rewrites -- reshape verbose JSON to compact tab-separated text via the
+# az CLI's --query (JMESPath) and --output tsv. Guarded on --output /
+# --query / -o so explicit intent (json, table, yaml, jsonc) always wins.
+# ---------------------------------------------------------------------------
+
+# Resource management
+
+!rewrite az-group-list
+!match az group list
+!unless --output --query -o
+!to "az group list --query '[].[name,location]' --output tsv"
+!announce true
+
+!rewrite az-resource-list
+!match az resource list
+!unless --output --query -o
+!to "az resource list --query '[].[name,type,location,resourceGroup]' --output tsv"
+!announce true
+
+!rewrite az-deployment-group-list
+!match az deployment group list
+!unless --output --query -o
+!to "az deployment group list --query '[].[name,properties.provisioningState,properties.timestamp]' --output tsv"
+!announce true
+
+!rewrite az-deployment-sub-list
+!match az deployment sub list
+!unless --output --query -o
+!to "az deployment sub list --query '[].[name,properties.provisioningState,properties.timestamp]' --output tsv"
+!announce true
+
+# Account / subscription / provider / extension
+
+!rewrite az-account-list
+!match az account list
+!unless --output --query -o
+!to "az account list --query '[].[name,id,state,isDefault]' --output tsv"
+!announce true
+
+!rewrite az-account-subscription-list
+!match az account subscription list
+!unless --output --query -o
+!to "az account subscription list --query '[].[displayName,subscriptionId,state]' --output tsv"
+!announce true
+
+!rewrite az-provider-list
+!match az provider list
+!unless --output --query -o
+!to "az provider list --query '[].[namespace,registrationState]' --output tsv"
+!announce true
+
+!rewrite az-feature-list
+!match az feature list
+!unless --output --query -o
+!to "az feature list --query '[].[name,properties.state]' --output tsv"
+!announce true
+
+!rewrite az-extension-list
+!match az extension list
+!unless --output --query -o
+!to "az extension list --query '[].[name,version,extensionType]' --output tsv"
+!announce true
+
+# Compute -- VM, VMSS, disk, image, snapshot
+
+!rewrite az-vm-list
+!match az vm list
+!unless --output --query -o
+!to "az vm list --query '[].[name,resourceGroup,location,hardwareProfile.vmSize]' --output tsv"
+!announce true
+
+!rewrite az-vm-list-sizes
+!match az vm list-sizes
+!unless --output --query -o
+!to "az vm list-sizes --query '[].[name,numberOfCores,memoryInMB]' --output tsv"
+!announce true
+
+!rewrite az-vm-list-skus
+!match az vm list-skus
+!unless --output --query -o
+!to "az vm list-skus --query '[].[name,resourceType,locations[0]]' --output tsv"
+!announce true
+
+!rewrite az-vmss-list
+!match az vmss list
+!unless --output --query -o
+!to "az vmss list --query '[].[name,resourceGroup,sku.name,sku.capacity]' --output tsv"
+!announce true
+
+!rewrite az-disk-list
+!match az disk list
+!unless --output --query -o
+!to "az disk list --query '[].[name,resourceGroup,diskSizeGb,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-image-list
+!match az image list
+!unless --output --query -o
+!to "az image list --query '[].[name,resourceGroup,location]' --output tsv"
+!announce true
+
+!rewrite az-snapshot-list
+!match az snapshot list
+!unless --output --query -o
+!to "az snapshot list --query '[].[name,resourceGroup,diskSizeGb]' --output tsv"
+!announce true
+
+# Networking
+
+!rewrite az-network-vnet-list
+!match az network vnet list
+!unless --output --query -o
+!to "az network vnet list --query '[].[name,resourceGroup,location,addressSpace.addressPrefixes[0]]' --output tsv"
+!announce true
+
+!rewrite az-network-vnet-subnet-list
+!match az network vnet subnet list
+!unless --output --query -o
+!to "az network vnet subnet list --query '[].[name,addressPrefix,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-network-nsg-list
+!match az network nsg list
+!unless --output --query -o
+!to "az network nsg list --query '[].[name,resourceGroup,location]' --output tsv"
+!announce true
+
+!rewrite az-network-nsg-rule-list
+!match az network nsg rule list
+!unless --output --query -o
+!to "az network nsg rule list --query '[].[name,priority,direction,access,protocol]' --output tsv"
+!announce true
+
+!rewrite az-network-public-ip-list
+!match az network public-ip list
+!unless --output --query -o
+!to "az network public-ip list --query '[].[name,resourceGroup,ipAddress,publicIpAllocationMethod]' --output tsv"
+!announce true
+
+!rewrite az-network-private-endpoint-list
+!match az network private-endpoint list
+!unless --output --query -o
+!to "az network private-endpoint list --query '[].[name,resourceGroup,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-network-lb-list
+!match az network lb list
+!unless --output --query -o
+!to "az network lb list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-network-application-gateway-list
+!match az network application-gateway list
+!unless --output --query -o
+!to "az network application-gateway list --query '[].[name,resourceGroup,provisioningState,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-network-dns-zone-list
+!match az network dns zone list
+!unless --output --query -o
+!to "az network dns zone list --query '[].[name,resourceGroup,numberOfRecordSets]' --output tsv"
+!announce true
+
+!rewrite az-network-dns-record-set-list
+!match az network dns record-set list
+!unless --output --query -o
+!to "az network dns record-set list --query '[].[name,type,ttl]' --output tsv"
+!announce true
+
+!rewrite az-network-route-table-list
+!match az network route-table list
+!unless --output --query -o
+!to "az network route-table list --query '[].[name,resourceGroup,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-network-vpn-gateway-list
+!match az network vpn-gateway list
+!unless --output --query -o
+!to "az network vpn-gateway list --query '[].[name,resourceGroup,provisioningState,vpnType]' --output tsv"
+!announce true
+
+!rewrite az-network-front-door-list
+!match az network front-door list
+!unless --output --query -o
+!to "az network front-door list --query '[].[name,resourceGroup,provisioningState]' --output tsv"
+!announce true
+
+# Storage
+
+!rewrite az-storage-account-list
+!match az storage account list
+!unless --output --query -o
+!to "az storage account list --query '[].[name,resourceGroup,location,kind,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-storage-container-list
+!match az storage container list
+!unless --output --query -o
+!to "az storage container list --query '[].[name,properties.lastModified,properties.publicAccess]' --output tsv"
+!announce true
+
+!rewrite az-storage-blob-list
+!match az storage blob list
+!unless --output --query -o
+!to "az storage blob list --query '[].[name,properties.contentLength,properties.lastModified]' --output tsv"
+!announce true
+
+!rewrite az-storage-queue-list
+!match az storage queue list
+!unless --output --query -o
+!to "az storage queue list --query '[].name' --output tsv"
+!announce true
+
+!rewrite az-storage-table-list
+!match az storage table list
+!unless --output --query -o
+!to "az storage table list --query '[].name' --output tsv"
+!announce true
+
+!rewrite az-storage-share-list
+!match az storage share list
+!unless --output --query -o
+!to "az storage share list --query '[].[name,properties.quota]' --output tsv"
+!announce true
+
+# App Services
+
+!rewrite az-webapp-list
+!match az webapp list
+!unless --output --query -o
+!to "az webapp list --query '[].[name,resourceGroup,state,defaultHostName,kind]' --output tsv"
+!announce true
+
+!rewrite az-functionapp-list
+!match az functionapp list
+!unless --output --query -o
+!to "az functionapp list --query '[].[name,resourceGroup,state,defaultHostName]' --output tsv"
+!announce true
+
+!rewrite az-functionapp-function-list
+!match az functionapp function list
+!unless --output --query -o
+!to "az functionapp function list --query '[].[name,config.bindings[0].type]' --output tsv"
+!announce true
+
+!rewrite az-appservice-plan-list
+!match az appservice plan list
+!unless --output --query -o
+!to "az appservice plan list --query '[].[name,resourceGroup,sku.name,numberOfSites]' --output tsv"
+!announce true
+
+# AKS -- Kubernetes
+
+!rewrite az-aks-list
+!match az aks list
+!unless --output --query -o
+!to "az aks list --query '[].[name,resourceGroup,location,kubernetesVersion,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-aks-nodepool-list
+!match az aks nodepool list
+!unless --output --query -o
+!to "az aks nodepool list --query '[].[name,vmSize,count,mode,provisioningState]' --output tsv"
+!announce true
+
+# Databases
+
+!rewrite az-sql-server-list
+!match az sql server list
+!unless --output --query -o
+!to "az sql server list --query '[].[name,resourceGroup,location,administratorLogin]' --output tsv"
+!announce true
+
+!rewrite az-sql-db-list
+!match az sql db list
+!unless --output --query -o
+!to "az sql db list --query '[].[name,status,currentServiceObjectiveName,edition]' --output tsv"
+!announce true
+
+!rewrite az-sql-elastic-pool-list
+!match az sql elastic-pool list
+!unless --output --query -o
+!to "az sql elastic-pool list --query '[].[name,state,edition,dtu]' --output tsv"
+!announce true
+
+!rewrite az-cosmosdb-list
+!match az cosmosdb list
+!unless --output --query -o
+!to "az cosmosdb list --query '[].[name,resourceGroup,location,kind]' --output tsv"
+!announce true
+
+!rewrite az-cosmosdb-database-list
+!match az cosmosdb database list
+!unless --output --query -o
+!to "az cosmosdb database list --query '[].[id,_rid]' --output tsv"
+!announce true
+
+!rewrite az-postgres-server-list
+!match az postgres server list
+!unless --output --query -o
+!to "az postgres server list --query '[].[name,resourceGroup,location,sku.name,version]' --output tsv"
+!announce true
+
+!rewrite az-postgres-flexible-server-list
+!match az postgres flexible-server list
+!unless --output --query -o
+!to "az postgres flexible-server list --query '[].[name,resourceGroup,location,sku.name,version]' --output tsv"
+!announce true
+
+!rewrite az-mysql-server-list
+!match az mysql server list
+!unless --output --query -o
+!to "az mysql server list --query '[].[name,resourceGroup,location,sku.name,version]' --output tsv"
+!announce true
+
+!rewrite az-mysql-flexible-server-list
+!match az mysql flexible-server list
+!unless --output --query -o
+!to "az mysql flexible-server list --query '[].[name,resourceGroup,location,sku.name,version]' --output tsv"
+!announce true
+
+!rewrite az-mariadb-server-list
+!match az mariadb server list
+!unless --output --query -o
+!to "az mariadb server list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-redis-list
+!match az redis list
+!unless --output --query -o
+!to "az redis list --query '[].[name,resourceGroup,sku.name,provisioningState]' --output tsv"
+!announce true
+
+# Key Vault
+
+!rewrite az-keyvault-list
+!match az keyvault list
+!unless --output --query -o
+!to "az keyvault list --query '[].[name,resourceGroup,location]' --output tsv"
+!announce true
+
+!rewrite az-keyvault-secret-list
+!match az keyvault secret list
+!unless --output --query -o
+!to "az keyvault secret list --query '[].[name,attributes.enabled,attributes.updated]' --output tsv"
+!announce true
+
+!rewrite az-keyvault-key-list
+!match az keyvault key list
+!unless --output --query -o
+!to "az keyvault key list --query '[].[name,attributes.enabled,attributes.updated]' --output tsv"
+!announce true
+
+!rewrite az-keyvault-certificate-list
+!match az keyvault certificate list
+!unless --output --query -o
+!to "az keyvault certificate list --query '[].[name,attributes.enabled,attributes.expires]' --output tsv"
+!announce true
+
+# Container Registry / Container Instance / Container Apps
+
+!rewrite az-acr-list
+!match az acr list
+!unless --output --query -o
+!to "az acr list --query '[].[name,resourceGroup,loginServer,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-acr-repository-list
+!match az acr repository list
+!unless --output --query -o
+!to "az acr repository list --output tsv"
+!announce true
+
+!rewrite az-acr-repository-show-tags
+!match az acr repository show-tags
+!unless --output --query -o
+!to "az acr repository show-tags --output tsv"
+!announce true
+
+!rewrite az-container-list
+!match az container list
+!unless --output --query -o
+!to "az container list --query '[].[name,resourceGroup,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-containerapp-list
+!match az containerapp list
+!unless --output --query -o
+!to "az containerapp list --query '[].[name,resourceGroup,properties.runningStatus,properties.latestRevisionName]' --output tsv"
+!announce true
+
+!rewrite az-containerapp-env-list
+!match az containerapp env list
+!unless --output --query -o
+!to "az containerapp env list --query '[].[name,resourceGroup,properties.provisioningState]' --output tsv"
+!announce true
+
+# Identity / RBAC
+
+!rewrite az-ad-user-list
+!match az ad user list
+!unless --output --query -o
+!to "az ad user list --query '[].[displayName,userPrincipalName,id]' --output tsv"
+!announce true
+
+!rewrite az-ad-group-list
+!match az ad group list
+!unless --output --query -o
+!to "az ad group list --query '[].[displayName,id,description]' --output tsv"
+!announce true
+
+!rewrite az-ad-app-list
+!match az ad app list
+!unless --output --query -o
+!to "az ad app list --query '[].[displayName,appId,id]' --output tsv"
+!announce true
+
+!rewrite az-ad-sp-list
+!match az ad sp list
+!unless --output --query -o
+!to "az ad sp list --query '[].[displayName,appId,id]' --output tsv"
+!announce true
+
+!rewrite az-role-assignment-list
+!match az role assignment list
+!unless --output --query -o
+!to "az role assignment list --query '[].[principalName,roleDefinitionName,scope]' --output tsv"
+!announce true
+
+!rewrite az-role-definition-list
+!match az role definition list
+!unless --output --query -o
+!to "az role definition list --query '[].[roleName,description,roleType]' --output tsv"
+!announce true
+
+# Monitor / Log Analytics / Alerts
+
+!rewrite az-monitor-log-analytics-workspace-list
+!match az monitor log-analytics workspace list
+!unless --output --query -o
+!to "az monitor log-analytics workspace list --query '[].[name,resourceGroup,location,retentionInDays]' --output tsv"
+!announce true
+
+!rewrite az-monitor-activity-log-list
+!match az monitor activity-log list
+!unless --output --query -o
+!to "az monitor activity-log list --query '[].[operationName.value,status.value,eventTimestamp,caller]' --output tsv"
+!announce true
+
+!rewrite az-monitor-diagnostic-settings-list
+!match az monitor diagnostic-settings list
+!unless --output --query -o
+!to "az monitor diagnostic-settings list --query '[].[name,workspaceId]' --output tsv"
+!announce true
+
+!rewrite az-monitor-metrics-alert-list
+!match az monitor metrics alert list
+!unless --output --query -o
+!to "az monitor metrics alert list --query '[].[name,severity,enabled,description]' --output tsv"
+!announce true
+
+!rewrite az-monitor-autoscale-list
+!match az monitor autoscale list
+!unless --output --query -o
+!to "az monitor autoscale list --query '[].[name,enabled,targetResourceUri]' --output tsv"
+!announce true
+
+!rewrite az-monitor-action-group-list
+!match az monitor action-group list
+!unless --output --query -o
+!to "az monitor action-group list --query '[].[name,resourceGroup,enabled]' --output tsv"
+!announce true
+
+# Messaging / Eventing
+
+!rewrite az-servicebus-namespace-list
+!match az servicebus namespace list
+!unless --output --query -o
+!to "az servicebus namespace list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-servicebus-queue-list
+!match az servicebus queue list
+!unless --output --query -o
+!to "az servicebus queue list --query '[].[name,status,messageCount]' --output tsv"
+!announce true
+
+!rewrite az-servicebus-topic-list
+!match az servicebus topic list
+!unless --output --query -o
+!to "az servicebus topic list --query '[].[name,status,subscriptionCount]' --output tsv"
+!announce true
+
+!rewrite az-eventhubs-namespace-list
+!match az eventhubs namespace list
+!unless --output --query -o
+!to "az eventhubs namespace list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-eventhubs-eventhub-list
+!match az eventhubs eventhub list
+!unless --output --query -o
+!to "az eventhubs eventhub list --query '[].[name,status,partitionCount]' --output tsv"
+!announce true
+
+!rewrite az-eventgrid-topic-list
+!match az eventgrid topic list
+!unless --output --query -o
+!to "az eventgrid topic list --query '[].[name,resourceGroup,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-eventgrid-domain-list
+!match az eventgrid domain list
+!unless --output --query -o
+!to "az eventgrid domain list --query '[].[name,resourceGroup,provisioningState]' --output tsv"
+!announce true
+
+# AI / Data / Analytics
+
+!rewrite az-cognitiveservices-account-list
+!match az cognitiveservices account list
+!unless --output --query -o
+!to "az cognitiveservices account list --query '[].[name,resourceGroup,location,kind,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-ml-workspace-list
+!match az ml workspace list
+!unless --output --query -o
+!to "az ml workspace list --query '[].[name,resourceGroup,location]' --output tsv"
+!announce true
+
+!rewrite az-search-service-list
+!match az search service list
+!unless --output --query -o
+!to "az search service list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-synapse-workspace-list
+!match az synapse workspace list
+!unless --output --query -o
+!to "az synapse workspace list --query '[].[name,resourceGroup,location]' --output tsv"
+!announce true
+
+!rewrite az-datafactory-list
+!match az datafactory list
+!unless --output --query -o
+!to "az datafactory list --query '[].[name,resourceGroup,location]' --output tsv"
+!announce true
+
+!rewrite az-databricks-workspace-list
+!match az databricks workspace list
+!unless --output --query -o
+!to "az databricks workspace list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-purview-account-list
+!match az purview account list
+!unless --output --query -o
+!to "az purview account list --query '[].[name,resourceGroup,location]' --output tsv"
+!announce true
+
+# CDN / API Management / Front Door
+
+!rewrite az-cdn-profile-list
+!match az cdn profile list
+!unless --output --query -o
+!to "az cdn profile list --query '[].[name,resourceGroup,sku.name,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-cdn-endpoint-list
+!match az cdn endpoint list
+!unless --output --query -o
+!to "az cdn endpoint list --query '[].[name,hostName,isHttpAllowed,isHttpsAllowed]' --output tsv"
+!announce true
+
+!rewrite az-apim-list
+!match az apim list
+!unless --output --query -o
+!to "az apim list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-apim-api-list
+!match az apim api list
+!unless --output --query -o
+!to "az apim api list --query '[].[name,displayName,path]' --output tsv"
+!announce true
+
+# Policy / Governance / Advisor / Cost
+
+!rewrite az-policy-assignment-list
+!match az policy assignment list
+!unless --output --query -o
+!to "az policy assignment list --query '[].[name,displayName,scope]' --output tsv"
+!announce true
+
+!rewrite az-policy-definition-list
+!match az policy definition list
+!unless --output --query -o
+!to "az policy definition list --query '[].[displayName,policyType,mode]' --output tsv"
+!announce true
+
+!rewrite az-advisor-recommendation-list
+!match az advisor recommendation list
+!unless --output --query -o
+!to "az advisor recommendation list --query '[].[category,impact,shortDescription.problem]' --output tsv"
+!announce true
+
+!rewrite az-consumption-usage-list
+!match az consumption usage list
+!unless --output --query -o
+!to "az consumption usage list --query '[].[usageStart,instanceName,pretaxCost]' --output tsv"
+!announce true
+
+# Backup / Batch / IoT / SignalR
+
+!rewrite az-backup-vault-list
+!match az backup vault list
+!unless --output --query -o
+!to "az backup vault list --query '[].[name,resourceGroup,location]' --output tsv"
+!announce true
+
+!rewrite az-backup-item-list
+!match az backup item list
+!unless --output --query -o
+!to "az backup item list --query '[].[name,properties.protectionStatus,properties.lastBackupTime]' --output tsv"
+!announce true
+
+!rewrite az-batch-account-list
+!match az batch account list
+!unless --output --query -o
+!to "az batch account list --query '[].[name,resourceGroup,location,provisioningState]' --output tsv"
+!announce true
+
+!rewrite az-batch-pool-list
+!match az batch pool list
+!unless --output --query -o
+!to "az batch pool list --query '[].[id,state,vmSize,currentDedicatedNodes]' --output tsv"
+!announce true
+
+!rewrite az-iot-hub-list
+!match az iot hub list
+!unless --output --query -o
+!to "az iot hub list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-iot-dps-list
+!match az iot dps list
+!unless --output --query -o
+!to "az iot dps list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-signalr-list
+!match az signalr list
+!unless --output --query -o
+!to "az signalr list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+# Bastion / Arc / Stack
+
+!rewrite az-network-bastion-list
+!match az network bastion list
+!unless --output --query -o
+!to "az network bastion list --query '[].[name,resourceGroup,location,sku.name]' --output tsv"
+!announce true
+
+!rewrite az-arcdata-dc-list
+!match az arcdata dc list
+!unless --output --query -o
+!to "az arcdata dc list --query '[].[name,location]' --output tsv"
+!announce true
+
+!rewrite az-stack-sub-list
+!match az stack sub list
+!unless --output --query -o
+!to "az stack sub list --query '[].[name,provisioningState]' --output tsv"
+!announce true
+
+# ---------------------------------------------------------------------------
+# Filters -- declarative safety nets. Ordered specific-first for the
+# longest-prefix-wins registry; per-service caps stay tight because
+# rewrites already projected most calls to short tab-separated rows.
+# ---------------------------------------------------------------------------
+
+# High-volume specific commands.
+
+!filter az-monitor-activity-log
+!match az monitor activity-log
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more events"
+
+!filter az-storage-blob
+!match az storage blob
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more blobs"
+
+!filter az-acr-repository
+!match az acr repository
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+# Per-service catch-all filters (longest-prefix wins vs the generic aws
+# filter and vs each other).
+
+!filter az-group
+!match az group
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-resource
+!match az resource
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more"
+
+!filter az-deployment
+!match az deployment
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-account
+!match az account
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-vm
+!match az vm
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-vmss
+!match az vmss
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-disk
+!match az disk
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-network
+!match az network
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter az-storage
+!match az storage
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter az-webapp
+!match az webapp
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-functionapp
+!match az functionapp
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-appservice
+!match az appservice
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-aks
+!match az aks
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-sql
+!match az sql
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-cosmosdb
+!match az cosmosdb
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-postgres
+!match az postgres
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-mysql
+!match az mysql
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-mariadb
+!match az mariadb
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-redis
+!match az redis
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-keyvault
+!match az keyvault
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-acr
+!match az acr
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-container
+!match az container
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-containerapp
+!match az containerapp
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-ad
+!match az ad
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter az-role
+!match az role
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter az-monitor
+!match az monitor
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-servicebus
+!match az servicebus
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-eventhubs
+!match az eventhubs
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-eventgrid
+!match az eventgrid
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-cognitiveservices
+!match az cognitiveservices
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-ml
+!match az ml
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-search
+!match az search
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-synapse
+!match az synapse
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-datafactory
+!match az datafactory
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-databricks
+!match az databricks
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-purview
+!match az purview
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-cdn
+!match az cdn
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-apim
+!match az apim
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-policy
+!match az policy
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter az-advisor
+!match az advisor
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-consumption
+!match az consumption
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-backup
+!match az backup
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-batch
+!match az batch
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-iot
+!match az iot
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-signalr
+!match az signalr
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-arcdata
+!match az arcdata
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter az-stack
+!match az stack
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+# Final safety net for any az command not covered above. Modest cap so
+# unknown commands still get some protection.
+
+!filter az
+!match az
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more"

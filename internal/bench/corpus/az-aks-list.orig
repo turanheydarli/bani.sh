@@ -1,0 +1,43 @@
+[
+  {
+    "name": "aks-prod-main",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "kubernetesVersion": "1.29.4",
+    "provisioningState": "Succeeded",
+    "id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.ContainerService/managedClusters/aks-prod-main",
+    "type": "Microsoft.ContainerService/managedClusters",
+    "dnsPrefix": "aks-prod-main-dns",
+    "fqdn": "aks-prod-main-dns-abc123.hcp.eastus.azmk8s.io",
+    "azurePortalFqdn": "aks-prod-main-dns-abc123.portal.hcp.eastus.azmk8s.io",
+    "aadProfile": {"managed": true, "enableAzureRbac": true, "tenantId": "tenant-guid"},
+    "addonProfiles": {"omsAgent": {"enabled": true, "config": {"logAnalyticsWorkspaceResourceID": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.OperationalInsights/workspaces/log-prod"}}, "azureKeyvaultSecretsProvider": {"enabled": true, "config": {"enableSecretRotation": "true", "rotationPollInterval": "2m"}}},
+    "agentPoolProfiles": [{"name": "systempool", "count": 3, "vmSize": "Standard_D4s_v3", "osDiskSizeGB": 128, "osDiskType": "Managed", "maxPods": 30, "type": "VirtualMachineScaleSets", "mode": "System", "orchestratorVersion": "1.29.4", "nodeLabels": {}, "nodeTaints": ["CriticalAddonsOnly=true:NoSchedule"], "enableAutoScaling": true, "minCount": 3, "maxCount": 5}, {"name": "workerpool", "count": 6, "vmSize": "Standard_D8s_v3", "osDiskSizeGB": 128, "type": "VirtualMachineScaleSets", "mode": "User", "orchestratorVersion": "1.29.4", "enableAutoScaling": true, "minCount": 3, "maxCount": 20}],
+    "identity": {"type": "SystemAssigned", "principalId": "aaa", "tenantId": "bbb"},
+    "networkProfile": {"networkPlugin": "azure", "networkPolicy": "azure", "loadBalancerSku": "standard", "outboundType": "loadBalancer", "podCidr": null, "serviceCidr": "10.0.0.0/16", "dnsServiceIP": "10.0.0.10"},
+    "nodeResourceGroup": "MC_rg-prod_aks-prod-main_eastus",
+    "sku": {"name": "Base", "tier": "Standard"},
+    "tags": {"Environment": "production", "Owner": "platform-team"}
+  },
+  {
+    "name": "aks-prod-batch",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "kubernetesVersion": "1.28.9",
+    "provisioningState": "Succeeded",
+    "id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.ContainerService/managedClusters/aks-prod-batch",
+    "agentPoolProfiles": [{"name": "systempool", "count": 3, "vmSize": "Standard_D4s_v3", "mode": "System"}],
+    "sku": {"name": "Base", "tier": "Standard"},
+    "tags": {"Environment": "production", "Purpose": "batch"}
+  },
+  {
+    "name": "aks-staging",
+    "resourceGroup": "rg-staging",
+    "location": "westus2",
+    "kubernetesVersion": "1.30.1",
+    "provisioningState": "Upgrading",
+    "id": "/subscriptions/xxx/resourceGroups/rg-staging/providers/Microsoft.ContainerService/managedClusters/aks-staging",
+    "sku": {"name": "Base", "tier": "Free"},
+    "tags": {"Environment": "staging"}
+  }
+]

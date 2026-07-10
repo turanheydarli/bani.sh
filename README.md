@@ -98,6 +98,7 @@ automatically on every merge to main - reproduce it any time with
 | `dotnet build` | 96 tok | 23 tok | 76% |
 | `JSON-preferred (kubectl / gh)` | 1214 tok | 889 tok | 27% |
 | `lockfile diffs` | 1467 tok | 249 tok | 83% |
+| `az (vm, storage, webapp, aks, activity)` | 4492 tok | 707 tok | 84% |
 | `aws (ec2, lambda, cf, logs, iam)` | 6486 tok | 1146 tok | 82% |
 <!-- bench:end -->
 

@@ -1,0 +1,61 @@
+[
+  {
+    "name": "prodartifacts",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "kind": "StorageV2",
+    "id": "/subscriptions/11111111-2222-3333-4444-555555555555/resourceGroups/rg-prod/providers/Microsoft.Storage/storageAccounts/prodartifacts",
+    "type": "Microsoft.Storage/storageAccounts",
+    "accessTier": "Hot",
+    "allowBlobPublicAccess": false,
+    "allowSharedKeyAccess": true,
+    "creationTime": "2024-08-14T10:23:00.000000+00:00",
+    "encryption": {"services": {"blob": {"enabled": true, "keyType": "Account"}, "file": {"enabled": true, "keyType": "Account"}, "queue": {"enabled": true, "keyType": "Service"}, "table": {"enabled": true, "keyType": "Service"}}, "keySource": "Microsoft.Storage"},
+    "networkRuleSet": {"defaultAction": "Deny", "bypass": "AzureServices", "ipRules": [], "virtualNetworkRules": [{"action": "Allow", "state": "Succeeded", "virtualNetworkResourceId": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Network/virtualNetworks/vnet-prod/subnets/subnet-web"}]},
+    "primaryEndpoints": {"blob": "https://prodartifacts.blob.core.windows.net/", "dfs": "https://prodartifacts.dfs.core.windows.net/", "file": "https://prodartifacts.file.core.windows.net/", "queue": "https://prodartifacts.queue.core.windows.net/", "table": "https://prodartifacts.table.core.windows.net/", "web": "https://prodartifacts.z13.web.core.windows.net/"},
+    "primaryLocation": "eastus",
+    "provisioningState": "Succeeded",
+    "sku": {"name": "Standard_GRS", "tier": "Standard"},
+    "statusOfPrimary": "available",
+    "tags": {"Environment": "production", "Owner": "platform-team"}
+  },
+  {
+    "name": "prodlogsarchive",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "kind": "StorageV2",
+    "id": "/subscriptions/11111111-2222-3333-4444-555555555555/resourceGroups/rg-prod/providers/Microsoft.Storage/storageAccounts/prodlogsarchive",
+    "accessTier": "Cool",
+    "creationTime": "2025-01-05T08:00:00.000000+00:00",
+    "primaryLocation": "eastus",
+    "provisioningState": "Succeeded",
+    "sku": {"name": "Standard_LRS", "tier": "Standard"},
+    "tags": {"Environment": "production", "Purpose": "log-archive"}
+  },
+  {
+    "name": "stgweb1",
+    "resourceGroup": "rg-staging",
+    "location": "westus2",
+    "kind": "StorageV2",
+    "id": "/subscriptions/xxx/resourceGroups/rg-staging/providers/Microsoft.Storage/storageAccounts/stgweb1",
+    "accessTier": "Hot",
+    "creationTime": "2026-03-14T09:00:00.000000+00:00",
+    "primaryLocation": "westus2",
+    "provisioningState": "Succeeded",
+    "sku": {"name": "Standard_LRS", "tier": "Standard"},
+    "tags": {"Environment": "staging"}
+  },
+  {
+    "name": "devsandboxstore",
+    "resourceGroup": "rg-dev",
+    "location": "northeurope",
+    "kind": "BlobStorage",
+    "id": "/subscriptions/xxx/resourceGroups/rg-dev/providers/Microsoft.Storage/storageAccounts/devsandboxstore",
+    "accessTier": "Hot",
+    "creationTime": "2026-05-20T11:30:00.000000+00:00",
+    "primaryLocation": "northeurope",
+    "provisioningState": "Succeeded",
+    "sku": {"name": "Standard_LRS", "tier": "Standard"},
+    "tags": {"Environment": "development"}
+  }
+]

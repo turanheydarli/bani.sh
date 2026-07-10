@@ -1,0 +1,61 @@
+[
+  {
+    "name": "prod-web-1",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "id": "/subscriptions/11111111-2222-3333-4444-555555555555/resourceGroups/rg-prod/providers/Microsoft.Compute/virtualMachines/prod-web-1",
+    "type": "Microsoft.Compute/virtualMachines",
+    "vmId": "aaaa1111-bbbb-2222-cccc-333333333333",
+    "hardwareProfile": {"vmSize": "Standard_D2s_v3"},
+    "networkProfile": {"networkInterfaces": [{"id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Network/networkInterfaces/prod-web-1-nic", "properties": {"deleteOption": "Detach"}}]},
+    "osProfile": {"adminUsername": "azureuser", "computerName": "prod-web-1", "linuxConfiguration": {"disablePasswordAuthentication": true, "provisionVMAgent": true, "ssh": {"publicKeys": [{"keyData": "ssh-rsa AAAA...", "path": "/home/azureuser/.ssh/authorized_keys"}]}}},
+    "provisioningState": "Succeeded",
+    "storageProfile": {"imageReference": {"exactVersion": "22.04.202607010", "offer": "0001-com-ubuntu-server-jammy", "publisher": "Canonical", "sku": "22_04-lts-gen2", "version": "latest"}, "osDisk": {"caching": "ReadWrite", "createOption": "FromImage", "deleteOption": "Delete", "diskSizeGB": 30, "managedDisk": {"id": "/subscriptions/xxx/resourceGroups/rg-prod/providers/Microsoft.Compute/disks/prod-web-1_OsDisk", "storageAccountType": "Premium_LRS"}, "name": "prod-web-1_OsDisk", "osType": "Linux"}, "dataDisks": []},
+    "tags": {"Environment": "production", "CostCenter": "platform-1042", "Owner": "platform-team"},
+    "timeCreated": "2026-05-12T14:23:00.000000+00:00"
+  },
+  {
+    "name": "prod-worker-1",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "id": "/subscriptions/11111111-2222-3333-4444-555555555555/resourceGroups/rg-prod/providers/Microsoft.Compute/virtualMachines/prod-worker-1",
+    "type": "Microsoft.Compute/virtualMachines",
+    "vmId": "bbbb2222-cccc-3333-dddd-444444444444",
+    "hardwareProfile": {"vmSize": "Standard_D4s_v3"},
+    "osProfile": {"adminUsername": "azureuser", "computerName": "prod-worker-1"},
+    "provisioningState": "Succeeded",
+    "storageProfile": {"osDisk": {"caching": "ReadWrite", "diskSizeGB": 30, "managedDisk": {"storageAccountType": "Premium_LRS"}, "name": "prod-worker-1_OsDisk", "osType": "Linux"}, "dataDisks": [{"diskSizeGB": 512, "lun": 0, "name": "prod-worker-1_data_0"}]},
+    "tags": {"Environment": "production", "Owner": "platform-team"},
+    "timeCreated": "2026-05-13T08:15:00.000000+00:00"
+  },
+  {
+    "name": "prod-worker-2",
+    "resourceGroup": "rg-prod",
+    "location": "eastus",
+    "id": "/subscriptions/11111111-2222-3333-4444-555555555555/resourceGroups/rg-prod/providers/Microsoft.Compute/virtualMachines/prod-worker-2",
+    "hardwareProfile": {"vmSize": "Standard_D4s_v3"},
+    "provisioningState": "Succeeded",
+    "tags": {"Environment": "production"},
+    "timeCreated": "2026-05-13T08:16:00.000000+00:00"
+  },
+  {
+    "name": "staging-web-1",
+    "resourceGroup": "rg-staging",
+    "location": "westus2",
+    "id": "/subscriptions/11111111-2222-3333-4444-555555555555/resourceGroups/rg-staging/providers/Microsoft.Compute/virtualMachines/staging-web-1",
+    "hardwareProfile": {"vmSize": "Standard_D2s_v3"},
+    "provisioningState": "Succeeded",
+    "tags": {"Environment": "staging"},
+    "timeCreated": "2026-06-01T10:00:00.000000+00:00"
+  },
+  {
+    "name": "dev-sandbox-alice",
+    "resourceGroup": "rg-dev",
+    "location": "northeurope",
+    "id": "/subscriptions/11111111-2222-3333-4444-555555555555/resourceGroups/rg-dev/providers/Microsoft.Compute/virtualMachines/dev-sandbox-alice",
+    "hardwareProfile": {"vmSize": "Standard_B2s"},
+    "provisioningState": "Updating",
+    "tags": {"Environment": "development", "Owner": "alice.dev"},
+    "timeCreated": "2026-07-05T14:30:00.000000+00:00"
+  }
+]
