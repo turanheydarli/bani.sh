@@ -72,6 +72,14 @@ Usage:
   banish init claude-code                Set up for Claude Code`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		// After a human-facing subcommand, surface a one-line notice if a newer
+		// release exists. Gated to a terminal and an allowlist so agents, hooks,
+		// and CI never see it.
+		PersistentPostRun: func(cmd *cobra.Command, _ []string) {
+			if noticeAllowed(cmd.Name()) {
+				maybeNotifyUpdate()
+			}
+		},
 	}
 
 	root.SetVersionTemplate(fmt.Sprintf("banish {{.Version}} %s/%s\n", stdruntime.GOOS, stdruntime.GOARCH))
@@ -96,6 +104,8 @@ Usage:
 	root.AddCommand(discoverCmd())
 	root.AddCommand(learnCmd())
 	root.AddCommand(benchCmd())
+	root.AddCommand(upgradeCmd())
+	root.AddCommand(uninstallCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "{\"e\":\"CLI\",\"m\":%q}\n", err.Error())
@@ -159,7 +169,7 @@ var subcommands = map[string]bool{
 	"run": true, "check": true, "version": true, "schema": true,
 	"serve": true, "gain": true, "init": true, "help": true,
 	"stop": true, "start": true, "status": true, "hook": true, "audit": true,
-	"discover": true, "learn": true, "bench": true,
+	"discover": true, "learn": true, "bench": true, "upgrade": true, "uninstall": true,
 	"--human": true, "--verbose": true, "--timeout": true, "--stats": true,
 	"-h": true, "--help": true,
 	"--version": true, "-v": true,
