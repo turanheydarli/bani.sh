@@ -398,6 +398,8 @@
   ],
   "readme": true,
   "group": "az (vm, storage, webapp, aks, activity)"
+ },
+ {
   "name": "aws-ec2-describe-instances",
   "display": "aws ec2 describe-instances (5 instances)",
   "command": "aws ec2 describe-instances",
