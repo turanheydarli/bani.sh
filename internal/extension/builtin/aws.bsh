@@ -1,0 +1,1846 @@
+!extension aws v:1.0
+
+# AWS CLI compaction. Two lines of defense against multi-KB describe-* / list-*
+# JSON payloads:
+#
+#   1. Rewrites project verbose JSON responses to a compact tab-separated
+#      text form using the tool's own JMESPath dialect (--query) and
+#      --output text. This is the biggest win by far: a single describe-
+#      instances call routinely drops from 40k+ chars to a few hundred.
+#      Every rewrite guards on --output / --query / -o so a caller who
+#      asked for a specific shape (JSON, table, JMESPath projection) is
+#      never overridden.
+#
+#   2. Filters cap line length and total lines as a safety net. They fire
+#      after the rewrite (or in place of it, when the guard tripped), so
+#      even a raw JSON response the caller demanded stays bounded.
+#
+# Verbs are short aliases; they lean on the rewrites, so `ec2ls` and
+# `aws ec2 describe-instances` produce the same compact table.
+
+# ---------------------------------------------------------------------------
+# Verbs -- short aliases for the highest-frequency listing commands.
+# ---------------------------------------------------------------------------
+
+!verb s3ls
+!args path
+!expand exec aws s3 ls {path}
+!help "List S3 buckets or objects at path"
+
+!verb ec2ls
+!expand exec aws ec2 describe-instances
+!help "List EC2 instances (compact table)"
+
+!verb lambdals
+!expand exec aws lambda list-functions
+!help "List Lambda functions"
+
+!verb iamusers
+!expand exec aws iam list-users
+!help "List IAM users"
+
+!verb iamroles
+!expand exec aws iam list-roles
+!help "List IAM roles"
+
+!verb cfstacks
+!expand exec aws cloudformation list-stacks
+!help "List CloudFormation stacks"
+
+!verb cfevents
+!args stack
+!expand exec aws cloudformation describe-stack-events --stack-name {stack}
+!help "Recent stack events for a CloudFormation stack"
+
+!verb loggroups
+!expand exec aws logs describe-log-groups
+!help "List CloudWatch log groups"
+
+!verb rdslist
+!expand exec aws rds describe-db-instances
+!help "List RDS database instances"
+
+!verb ddbtables
+!expand exec aws dynamodb list-tables
+!help "List DynamoDB tables"
+
+!verb ecslist
+!expand exec aws ecs list-clusters
+!help "List ECS clusters"
+
+!verb whoami
+!expand exec aws sts get-caller-identity
+!help "Show the current AWS caller identity"
+
+# ---------------------------------------------------------------------------
+# Rewrites -- reshape verbose JSON to compact text via the AWS CLI's own
+# projection language. Each rewrite guards on the family of flags a caller
+# would use to demand a specific format, so explicit intent always wins.
+#
+# The guard set (--output, --query, -o) also matches the "=" form
+# (--output=json) via prefix match, so both spellings are honored.
+# ---------------------------------------------------------------------------
+
+# EC2
+
+!rewrite aws-ec2-describe-instances
+!match aws ec2 describe-instances
+!unless --output --query -o
+!to "aws ec2 describe-instances --query 'Reservations[].Instances[].[InstanceId,State.Name,InstanceType,PrivateIpAddress,PublicIpAddress]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ec2-describe-security-groups
+!match aws ec2 describe-security-groups
+!unless --output --query -o
+!to "aws ec2 describe-security-groups --query 'SecurityGroups[].[GroupId,GroupName,VpcId,Description]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ec2-describe-volumes
+!match aws ec2 describe-volumes
+!unless --output --query -o
+!to "aws ec2 describe-volumes --query 'Volumes[].[VolumeId,State,Size,VolumeType,AvailabilityZone]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ec2-describe-vpcs
+!match aws ec2 describe-vpcs
+!unless --output --query -o
+!to "aws ec2 describe-vpcs --query 'Vpcs[].[VpcId,State,CidrBlock,IsDefault]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ec2-describe-subnets
+!match aws ec2 describe-subnets
+!unless --output --query -o
+!to "aws ec2 describe-subnets --query 'Subnets[].[SubnetId,VpcId,CidrBlock,AvailabilityZone,State]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ec2-describe-images
+!match aws ec2 describe-images
+!unless --output --query -o
+!to "aws ec2 describe-images --query 'Images[].[ImageId,Name,CreationDate,State]' --output text --no-cli-pager"
+!announce true
+
+# Lambda
+
+!rewrite aws-lambda-list-functions
+!match aws lambda list-functions
+!unless --output --query -o
+!to "aws lambda list-functions --query 'Functions[].[FunctionName,Runtime,LastModified,Timeout,MemorySize]' --output text --no-cli-pager"
+!announce true
+
+# CloudWatch Logs
+
+!rewrite aws-logs-describe-log-groups
+!match aws logs describe-log-groups
+!unless --output --query -o
+!to "aws logs describe-log-groups --query 'logGroups[].[logGroupName,storedBytes,retentionInDays]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-logs-describe-log-streams
+!match aws logs describe-log-streams
+!unless --output --query -o
+!to "aws logs describe-log-streams --query 'logStreams[].[logStreamName,lastEventTimestamp,storedBytes]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-logs-filter-log-events
+!match aws logs filter-log-events
+!unless --output --query -o
+!to "aws logs filter-log-events --query 'events[].[timestamp,logStreamName,message]' --output text --no-cli-pager"
+!announce true
+
+# IAM
+
+!rewrite aws-iam-list-users
+!match aws iam list-users
+!unless --output --query -o
+!to "aws iam list-users --query 'Users[].[UserName,UserId,CreateDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-iam-list-roles
+!match aws iam list-roles
+!unless --output --query -o
+!to "aws iam list-roles --query 'Roles[].[RoleName,RoleId,CreateDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-iam-list-groups
+!match aws iam list-groups
+!unless --output --query -o
+!to "aws iam list-groups --query 'Groups[].[GroupName,GroupId,CreateDate]' --output text --no-cli-pager"
+!announce true
+
+# CloudFormation
+
+!rewrite aws-cf-list-stacks
+!match aws cloudformation list-stacks
+!unless --output --query -o
+!to "aws cloudformation list-stacks --query 'StackSummaries[].[StackName,StackStatus,CreationTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cf-describe-stacks
+!match aws cloudformation describe-stacks
+!unless --output --query -o
+!to "aws cloudformation describe-stacks --query 'Stacks[].[StackName,StackStatus,CreationTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cf-describe-stack-events
+!match aws cloudformation describe-stack-events
+!unless --output --query -o
+!to "aws cloudformation describe-stack-events --query 'StackEvents[].[Timestamp,LogicalResourceId,ResourceStatus,ResourceStatusReason]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cf-list-stack-resources
+!match aws cloudformation list-stack-resources
+!unless --output --query -o
+!to "aws cloudformation list-stack-resources --query 'StackResourceSummaries[].[LogicalResourceId,ResourceType,ResourceStatus]' --output text --no-cli-pager"
+!announce true
+
+# ECS
+
+!rewrite aws-ecs-list-clusters
+!match aws ecs list-clusters
+!unless --output --query -o
+!to "aws ecs list-clusters --query 'clusterArns' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ecs-list-services
+!match aws ecs list-services
+!unless --output --query -o
+!to "aws ecs list-services --query 'serviceArns' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ecs-list-tasks
+!match aws ecs list-tasks
+!unless --output --query -o
+!to "aws ecs list-tasks --query 'taskArns' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ecs-describe-services
+!match aws ecs describe-services
+!unless --output --query -o
+!to "aws ecs describe-services --query 'services[].[serviceName,status,desiredCount,runningCount,pendingCount]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ecs-describe-tasks
+!match aws ecs describe-tasks
+!unless --output --query -o
+!to "aws ecs describe-tasks --query 'tasks[].[taskArn,lastStatus,desiredStatus,cpu,memory]' --output text --no-cli-pager"
+!announce true
+
+# RDS
+
+!rewrite aws-rds-describe-db-instances
+!match aws rds describe-db-instances
+!unless --output --query -o
+!to "aws rds describe-db-instances --query 'DBInstances[].[DBInstanceIdentifier,DBInstanceStatus,Engine,EngineVersion,DBInstanceClass]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-rds-describe-db-clusters
+!match aws rds describe-db-clusters
+!unless --output --query -o
+!to "aws rds describe-db-clusters --query 'DBClusters[].[DBClusterIdentifier,Status,Engine,EngineVersion]' --output text --no-cli-pager"
+!announce true
+
+# DynamoDB
+
+!rewrite aws-dynamodb-list-tables
+!match aws dynamodb list-tables
+!unless --output --query -o
+!to "aws dynamodb list-tables --query 'TableNames' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-dynamodb-describe-table
+!match aws dynamodb describe-table
+!unless --output --query -o
+!to "aws dynamodb describe-table --query 'Table.[TableName,TableStatus,ItemCount,TableSizeBytes]' --output text --no-cli-pager"
+!announce true
+
+# S3 (s3api -- s3 ls is human-friendly already)
+
+!rewrite aws-s3api-list-buckets
+!match aws s3api list-buckets
+!unless --output --query -o
+!to "aws s3api list-buckets --query 'Buckets[].[Name,CreationDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-s3api-list-objects-v2
+!match aws s3api list-objects-v2
+!unless --output --query -o
+!to "aws s3api list-objects-v2 --query 'Contents[].[Key,Size,LastModified,StorageClass]' --output text --no-cli-pager"
+!announce true
+
+# SQS / SNS
+
+!rewrite aws-sqs-list-queues
+!match aws sqs list-queues
+!unless --output --query -o
+!to "aws sqs list-queues --query 'QueueUrls' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-sns-list-topics
+!match aws sns list-topics
+!unless --output --query -o
+!to "aws sns list-topics --query 'Topics[].TopicArn' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-sns-list-subscriptions
+!match aws sns list-subscriptions
+!unless --output --query -o
+!to "aws sns list-subscriptions --query 'Subscriptions[].[SubscriptionArn,TopicArn,Protocol,Endpoint]' --output text --no-cli-pager"
+!announce true
+
+# Route53
+
+!rewrite aws-route53-list-hosted-zones
+!match aws route53 list-hosted-zones
+!unless --output --query -o
+!to "aws route53 list-hosted-zones --query 'HostedZones[].[Id,Name,ResourceRecordSetCount]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-route53-list-resource-record-sets
+!match aws route53 list-resource-record-sets
+!unless --output --query -o
+!to "aws route53 list-resource-record-sets --query 'ResourceRecordSets[].[Name,Type,TTL]' --output text --no-cli-pager"
+!announce true
+
+# SSM / Secrets Manager
+
+!rewrite aws-ssm-describe-parameters
+!match aws ssm describe-parameters
+!unless --output --query -o
+!to "aws ssm describe-parameters --query 'Parameters[].[Name,Type,LastModifiedDate,Version]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-secretsmanager-list-secrets
+!match aws secretsmanager list-secrets
+!unless --output --query -o
+!to "aws secretsmanager list-secrets --query 'SecretList[].[Name,ARN,LastChangedDate]' --output text --no-cli-pager"
+!announce true
+
+# EKS
+
+!rewrite aws-eks-list-clusters
+!match aws eks list-clusters
+!unless --output --query -o
+!to "aws eks list-clusters --query 'clusters' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-eks-describe-cluster
+!match aws eks describe-cluster
+!unless --output --query -o
+!to "aws eks describe-cluster --query 'cluster.[name,status,version,platformVersion,createdAt]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-eks-list-nodegroups
+!match aws eks list-nodegroups
+!unless --output --query -o
+!to "aws eks list-nodegroups --query 'nodegroups' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-eks-describe-nodegroup
+!match aws eks describe-nodegroup
+!unless --output --query -o
+!to "aws eks describe-nodegroup --query 'nodegroup.[nodegroupName,status,capacityType,instanceTypes[0],createdAt]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-eks-list-addons
+!match aws eks list-addons
+!unless --output --query -o
+!to "aws eks list-addons --query 'addons' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-eks-list-fargate-profiles
+!match aws eks list-fargate-profiles
+!unless --output --query -o
+!to "aws eks list-fargate-profiles --query 'fargateProfileNames' --output text --no-cli-pager"
+!announce true
+
+# KMS
+
+!rewrite aws-kms-list-keys
+!match aws kms list-keys
+!unless --output --query -o
+!to "aws kms list-keys --query 'Keys[].[KeyId,KeyArn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-kms-list-aliases
+!match aws kms list-aliases
+!unless --output --query -o
+!to "aws kms list-aliases --query 'Aliases[].[AliasName,TargetKeyId]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-kms-describe-key
+!match aws kms describe-key
+!unless --output --query -o
+!to "aws kms describe-key --query 'KeyMetadata.[KeyId,Enabled,Description,KeyUsage,KeyState]' --output text --no-cli-pager"
+!announce true
+
+# API Gateway v1
+
+!rewrite aws-apigateway-get-rest-apis
+!match aws apigateway get-rest-apis
+!unless --output --query -o
+!to "aws apigateway get-rest-apis --query 'items[].[id,name,createdDate,version]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apigateway-get-stages
+!match aws apigateway get-stages
+!unless --output --query -o
+!to "aws apigateway get-stages --query 'item[].[stageName,deploymentId,description,createdDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apigateway-get-usage-plans
+!match aws apigateway get-usage-plans
+!unless --output --query -o
+!to "aws apigateway get-usage-plans --query 'items[].[id,name,description]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apigateway-get-api-keys
+!match aws apigateway get-api-keys
+!unless --output --query -o
+!to "aws apigateway get-api-keys --query 'items[].[id,name,createdDate,enabled]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apigateway-get-resources
+!match aws apigateway get-resources
+!unless --output --query -o
+!to "aws apigateway get-resources --query 'items[].[id,path]' --output text --no-cli-pager"
+!announce true
+
+# API Gateway v2
+
+!rewrite aws-apigatewayv2-get-apis
+!match aws apigatewayv2 get-apis
+!unless --output --query -o
+!to "aws apigatewayv2 get-apis --query 'Items[].[ApiId,Name,ProtocolType,CreatedDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apigatewayv2-get-routes
+!match aws apigatewayv2 get-routes
+!unless --output --query -o
+!to "aws apigatewayv2 get-routes --query 'Items[].[RouteId,RouteKey,Target]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apigatewayv2-get-integrations
+!match aws apigatewayv2 get-integrations
+!unless --output --query -o
+!to "aws apigatewayv2 get-integrations --query 'Items[].[IntegrationId,IntegrationType,IntegrationUri]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apigatewayv2-get-stages
+!match aws apigatewayv2 get-stages
+!unless --output --query -o
+!to "aws apigatewayv2 get-stages --query 'Items[].[StageName,DeploymentId,LastUpdatedDate]' --output text --no-cli-pager"
+!announce true
+
+# Step Functions
+
+!rewrite aws-stepfunctions-list-state-machines
+!match aws stepfunctions list-state-machines
+!unless --output --query -o
+!to "aws stepfunctions list-state-machines --query 'stateMachines[].[name,stateMachineArn,type,creationDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-stepfunctions-describe-state-machine
+!match aws stepfunctions describe-state-machine
+!unless --output --query -o
+!to "aws stepfunctions describe-state-machine --query '[name,status,type,creationDate,roleArn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-stepfunctions-list-executions
+!match aws stepfunctions list-executions
+!unless --output --query -o
+!to "aws stepfunctions list-executions --query 'executions[].[name,status,startDate,stopDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-stepfunctions-describe-execution
+!match aws stepfunctions describe-execution
+!unless --output --query -o
+!to "aws stepfunctions describe-execution --query '[name,status,startDate,stopDate,input]' --output text --no-cli-pager"
+!announce true
+
+# Kinesis / Firehose
+
+!rewrite aws-kinesis-list-streams
+!match aws kinesis list-streams
+!unless --output --query -o
+!to "aws kinesis list-streams --query 'StreamNames' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-kinesis-describe-stream
+!match aws kinesis describe-stream
+!unless --output --query -o
+!to "aws kinesis describe-stream --query 'StreamDescription.[StreamName,StreamStatus,RetentionPeriodHours]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-kinesis-list-shards
+!match aws kinesis list-shards
+!unless --output --query -o
+!to "aws kinesis list-shards --query 'Shards[].[ShardId,HashKeyRange.StartingHashKey]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-firehose-list-delivery-streams
+!match aws firehose list-delivery-streams
+!unless --output --query -o
+!to "aws firehose list-delivery-streams --query 'DeliveryStreamNames' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-firehose-describe-delivery-stream
+!match aws firehose describe-delivery-stream
+!unless --output --query -o
+!to "aws firehose describe-delivery-stream --query 'DeliveryStreamDescription.[DeliveryStreamName,DeliveryStreamStatus,DeliveryStreamType,CreateTimestamp]' --output text --no-cli-pager"
+!announce true
+
+# EventBridge
+
+!rewrite aws-events-list-rules
+!match aws events list-rules
+!unless --output --query -o
+!to "aws events list-rules --query 'Rules[].[Name,State,ScheduleExpression]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-events-list-event-buses
+!match aws events list-event-buses
+!unless --output --query -o
+!to "aws events list-event-buses --query 'EventBuses[].[Name,Arn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-events-list-targets-by-rule
+!match aws events list-targets-by-rule
+!unless --output --query -o
+!to "aws events list-targets-by-rule --query 'Targets[].[Id,Arn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-events-list-archives
+!match aws events list-archives
+!unless --output --query -o
+!to "aws events list-archives --query 'Archives[].[ArchiveName,State,CreationTime]' --output text --no-cli-pager"
+!announce true
+
+# CloudWatch
+
+!rewrite aws-cloudwatch-list-metrics
+!match aws cloudwatch list-metrics
+!unless --output --query -o
+!to "aws cloudwatch list-metrics --query 'Metrics[].[Namespace,MetricName]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cloudwatch-describe-alarms
+!match aws cloudwatch describe-alarms
+!unless --output --query -o
+!to "aws cloudwatch describe-alarms --query 'MetricAlarms[].[AlarmName,StateValue,MetricName,Namespace]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cloudwatch-describe-alarm-history
+!match aws cloudwatch describe-alarm-history
+!unless --output --query -o
+!to "aws cloudwatch describe-alarm-history --query 'AlarmHistoryItems[].[Timestamp,HistoryItemType,HistorySummary]' --output text --no-cli-pager"
+!announce true
+
+# Auto Scaling
+
+!rewrite aws-autoscaling-describe-auto-scaling-groups
+!match aws autoscaling describe-auto-scaling-groups
+!unless --output --query -o
+!to "aws autoscaling describe-auto-scaling-groups --query 'AutoScalingGroups[].[AutoScalingGroupName,MinSize,MaxSize,DesiredCapacity]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-autoscaling-describe-auto-scaling-instances
+!match aws autoscaling describe-auto-scaling-instances
+!unless --output --query -o
+!to "aws autoscaling describe-auto-scaling-instances --query 'AutoScalingInstances[].[InstanceId,AutoScalingGroupName,HealthStatus,LifecycleState]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-autoscaling-describe-launch-configurations
+!match aws autoscaling describe-launch-configurations
+!unless --output --query -o
+!to "aws autoscaling describe-launch-configurations --query 'LaunchConfigurations[].[LaunchConfigurationName,InstanceType,ImageId,CreatedTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-autoscaling-describe-scaling-activities
+!match aws autoscaling describe-scaling-activities
+!unless --output --query -o
+!to "aws autoscaling describe-scaling-activities --query 'Activities[].[ActivityId,AutoScalingGroupName,StatusCode,StartTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-autoscaling-describe-policies
+!match aws autoscaling describe-policies
+!unless --output --query -o
+!to "aws autoscaling describe-policies --query 'ScalingPolicies[].[PolicyName,AutoScalingGroupName,PolicyType,MetricAggregationType]' --output text --no-cli-pager"
+!announce true
+
+# ELB v2 (ALB/NLB) and Classic ELB
+
+!rewrite aws-elbv2-describe-load-balancers
+!match aws elbv2 describe-load-balancers
+!unless --output --query -o
+!to "aws elbv2 describe-load-balancers --query 'LoadBalancers[].[LoadBalancerName,DNSName,Type,State.Code,VpcId]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-elbv2-describe-target-groups
+!match aws elbv2 describe-target-groups
+!unless --output --query -o
+!to "aws elbv2 describe-target-groups --query 'TargetGroups[].[TargetGroupName,Protocol,Port,TargetType,VpcId]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-elbv2-describe-listeners
+!match aws elbv2 describe-listeners
+!unless --output --query -o
+!to "aws elbv2 describe-listeners --query 'Listeners[].[ListenerArn,Protocol,Port]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-elbv2-describe-target-health
+!match aws elbv2 describe-target-health
+!unless --output --query -o
+!to "aws elbv2 describe-target-health --query 'TargetHealthDescriptions[].[Target.Id,TargetHealth.State,TargetHealth.Reason]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-elbv2-describe-rules
+!match aws elbv2 describe-rules
+!unless --output --query -o
+!to "aws elbv2 describe-rules --query 'Rules[].[RuleArn,Priority,IsDefault]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-elb-describe-load-balancers
+!match aws elb describe-load-balancers
+!unless --output --query -o
+!to "aws elb describe-load-balancers --query 'LoadBalancerDescriptions[].[LoadBalancerName,DNSName,Scheme,VPCId]' --output text --no-cli-pager"
+!announce true
+
+# CloudFront
+
+!rewrite aws-cloudfront-list-distributions
+!match aws cloudfront list-distributions
+!unless --output --query -o
+!to "aws cloudfront list-distributions --query 'DistributionList.Items[].[Id,DomainName,Status,Enabled,LastModifiedTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cloudfront-get-distribution
+!match aws cloudfront get-distribution
+!unless --output --query -o
+!to "aws cloudfront get-distribution --query 'Distribution.[Id,DomainName,Status,LastModifiedTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cloudfront-list-invalidations
+!match aws cloudfront list-invalidations
+!unless --output --query -o
+!to "aws cloudfront list-invalidations --query 'InvalidationList.Items[].[Id,Status,CreateTime]' --output text --no-cli-pager"
+!announce true
+
+# ACM
+
+!rewrite aws-acm-list-certificates
+!match aws acm list-certificates
+!unless --output --query -o
+!to "aws acm list-certificates --query 'CertificateSummaryList[].[CertificateArn,DomainName,Status]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-acm-describe-certificate
+!match aws acm describe-certificate
+!unless --output --query -o
+!to "aws acm describe-certificate --query 'Certificate.[DomainName,Status,Issuer,NotAfter]' --output text --no-cli-pager"
+!announce true
+
+# Cognito
+
+!rewrite aws-cognito-idp-list-user-pools
+!match aws cognito-idp list-user-pools
+!unless --output --query -o
+!to "aws cognito-idp list-user-pools --query 'UserPools[].[Id,Name,CreationDate,LastModifiedDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cognito-idp-list-users
+!match aws cognito-idp list-users
+!unless --output --query -o
+!to "aws cognito-idp list-users --query 'Users[].[Username,UserStatus,Enabled,UserCreateDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cognito-identity-list-identity-pools
+!match aws cognito-identity list-identity-pools
+!unless --output --query -o
+!to "aws cognito-identity list-identity-pools --query 'IdentityPools[].[IdentityPoolId,IdentityPoolName]' --output text --no-cli-pager"
+!announce true
+
+# AppSync
+
+!rewrite aws-appsync-list-graphql-apis
+!match aws appsync list-graphql-apis
+!unless --output --query -o
+!to "aws appsync list-graphql-apis --query 'graphqlApis[].[apiId,name,authenticationType,arn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-appsync-list-resolvers
+!match aws appsync list-resolvers
+!unless --output --query -o
+!to "aws appsync list-resolvers --query 'resolvers[].[typeName,fieldName,dataSourceName]' --output text --no-cli-pager"
+!announce true
+
+# SES / SESv2
+
+!rewrite aws-ses-list-identities
+!match aws ses list-identities
+!unless --output --query -o
+!to "aws ses list-identities --query 'Identities' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ses-list-configuration-sets
+!match aws ses list-configuration-sets
+!unless --output --query -o
+!to "aws ses list-configuration-sets --query 'ConfigurationSets[].Name' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-sesv2-list-email-identities
+!match aws sesv2 list-email-identities
+!unless --output --query -o
+!to "aws sesv2 list-email-identities --query 'EmailIdentities[].[IdentityName,IdentityType,SendingEnabled]' --output text --no-cli-pager"
+!announce true
+
+# CodeBuild / CodePipeline / CodeCommit / CodeDeploy
+
+!rewrite aws-codebuild-list-projects
+!match aws codebuild list-projects
+!unless --output --query -o
+!to "aws codebuild list-projects --query 'projects' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-codebuild-list-builds
+!match aws codebuild list-builds
+!unless --output --query -o
+!to "aws codebuild list-builds --query 'ids' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-codebuild-batch-get-builds
+!match aws codebuild batch-get-builds
+!unless --output --query -o
+!to "aws codebuild batch-get-builds --query 'builds[].[id,buildStatus,projectName,startTime,endTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-codepipeline-list-pipelines
+!match aws codepipeline list-pipelines
+!unless --output --query -o
+!to "aws codepipeline list-pipelines --query 'pipelines[].[name,version,created,updated]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-codepipeline-get-pipeline-state
+!match aws codepipeline get-pipeline-state
+!unless --output --query -o
+!to "aws codepipeline get-pipeline-state --query 'stageStates[].[stageName,latestExecution.status,latestExecution.pipelineExecutionId]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-codepipeline-list-pipeline-executions
+!match aws codepipeline list-pipeline-executions
+!unless --output --query -o
+!to "aws codepipeline list-pipeline-executions --query 'pipelineExecutionSummaries[].[pipelineExecutionId,status,startTime,lastUpdateTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-codecommit-list-repositories
+!match aws codecommit list-repositories
+!unless --output --query -o
+!to "aws codecommit list-repositories --query 'repositories[].[repositoryName,repositoryId]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-deploy-list-applications
+!match aws deploy list-applications
+!unless --output --query -o
+!to "aws deploy list-applications --query 'applications' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-deploy-list-deployments
+!match aws deploy list-deployments
+!unless --output --query -o
+!to "aws deploy list-deployments --query 'deployments' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-deploy-list-deployment-groups
+!match aws deploy list-deployment-groups
+!unless --output --query -o
+!to "aws deploy list-deployment-groups --query 'deploymentGroups' --output text --no-cli-pager"
+!announce true
+
+# Athena / Glue / EMR / SageMaker
+
+!rewrite aws-athena-list-databases
+!match aws athena list-databases
+!unless --output --query -o
+!to "aws athena list-databases --query 'DatabaseList[].[Name,Description]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-athena-list-work-groups
+!match aws athena list-work-groups
+!unless --output --query -o
+!to "aws athena list-work-groups --query 'WorkGroups[].[Name,State,Description]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-athena-list-query-executions
+!match aws athena list-query-executions
+!unless --output --query -o
+!to "aws athena list-query-executions --query 'QueryExecutionIds' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-athena-get-query-execution
+!match aws athena get-query-execution
+!unless --output --query -o
+!to "aws athena get-query-execution --query 'QueryExecution.[QueryExecutionId,Status.State,Statistics.EngineExecutionTimeInMillis]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-glue-get-databases
+!match aws glue get-databases
+!unless --output --query -o
+!to "aws glue get-databases --query 'DatabaseList[].[Name,Description,LocationUri]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-glue-get-tables
+!match aws glue get-tables
+!unless --output --query -o
+!to "aws glue get-tables --query 'TableList[].[Name,DatabaseName,CreateTime,UpdateTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-glue-get-jobs
+!match aws glue get-jobs
+!unless --output --query -o
+!to "aws glue get-jobs --query 'Jobs[].[Name,Role,CreatedOn,LastModifiedOn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-glue-get-crawlers
+!match aws glue get-crawlers
+!unless --output --query -o
+!to "aws glue get-crawlers --query 'Crawlers[].[Name,State,LastCrawl.Status,CreationTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-glue-get-job-runs
+!match aws glue get-job-runs
+!unless --output --query -o
+!to "aws glue get-job-runs --query 'JobRuns[].[Id,JobRunState,StartedOn,CompletedOn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-emr-list-clusters
+!match aws emr list-clusters
+!unless --output --query -o
+!to "aws emr list-clusters --query 'Clusters[].[Id,Name,Status.State,Status.Timeline.CreationDateTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-emr-describe-cluster
+!match aws emr describe-cluster
+!unless --output --query -o
+!to "aws emr describe-cluster --query 'Cluster.[Id,Name,Status.State,MasterPublicDnsName]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-emr-list-steps
+!match aws emr list-steps
+!unless --output --query -o
+!to "aws emr list-steps --query 'Steps[].[Id,Name,Status.State,ActionOnFailure]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-sagemaker-list-endpoints
+!match aws sagemaker list-endpoints
+!unless --output --query -o
+!to "aws sagemaker list-endpoints --query 'Endpoints[].[EndpointName,EndpointStatus,CreationTime,LastModifiedTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-sagemaker-list-training-jobs
+!match aws sagemaker list-training-jobs
+!unless --output --query -o
+!to "aws sagemaker list-training-jobs --query 'TrainingJobSummaries[].[TrainingJobName,TrainingJobStatus,CreationTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-sagemaker-list-notebook-instances
+!match aws sagemaker list-notebook-instances
+!unless --output --query -o
+!to "aws sagemaker list-notebook-instances --query 'NotebookInstances[].[NotebookInstanceName,NotebookInstanceStatus,InstanceType]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-sagemaker-list-models
+!match aws sagemaker list-models
+!unless --output --query -o
+!to "aws sagemaker list-models --query 'Models[].[ModelName,CreationTime]' --output text --no-cli-pager"
+!announce true
+
+# Batch / App Runner / Amplify
+
+!rewrite aws-batch-list-jobs
+!match aws batch list-jobs
+!unless --output --query -o
+!to "aws batch list-jobs --query 'jobSummaryList[].[jobId,jobName,status,createdAt]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-batch-describe-job-queues
+!match aws batch describe-job-queues
+!unless --output --query -o
+!to "aws batch describe-job-queues --query 'jobQueues[].[jobQueueName,state,status,priority]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-batch-describe-compute-environments
+!match aws batch describe-compute-environments
+!unless --output --query -o
+!to "aws batch describe-compute-environments --query 'computeEnvironments[].[computeEnvironmentName,state,status,type]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-batch-describe-jobs
+!match aws batch describe-jobs
+!unless --output --query -o
+!to "aws batch describe-jobs --query 'jobs[].[jobId,jobName,status,createdAt,stoppedAt]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apprunner-list-services
+!match aws apprunner list-services
+!unless --output --query -o
+!to "aws apprunner list-services --query 'ServiceSummaryList[].[ServiceName,ServiceId,Status,CreatedAt]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-apprunner-describe-service
+!match aws apprunner describe-service
+!unless --output --query -o
+!to "aws apprunner describe-service --query 'Service.[ServiceName,Status,ServiceUrl,CreatedAt]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-amplify-list-apps
+!match aws amplify list-apps
+!unless --output --query -o
+!to "aws amplify list-apps --query 'apps[].[appId,name,platform,defaultDomain]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-amplify-list-branches
+!match aws amplify list-branches
+!unless --output --query -o
+!to "aws amplify list-branches --query 'branches[].[branchName,stage,activeJobId,createTime]' --output text --no-cli-pager"
+!announce true
+
+# WAF / Security services
+
+!rewrite aws-wafv2-list-web-acls
+!match aws wafv2 list-web-acls
+!unless --output --query -o
+!to "aws wafv2 list-web-acls --query 'WebACLs[].[Name,Id,ARN]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-wafv2-list-ip-sets
+!match aws wafv2 list-ip-sets
+!unless --output --query -o
+!to "aws wafv2 list-ip-sets --query 'IPSets[].[Name,Id,ARN]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-wafv2-list-rule-groups
+!match aws wafv2 list-rule-groups
+!unless --output --query -o
+!to "aws wafv2 list-rule-groups --query 'RuleGroups[].[Name,Id,ARN]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-guardduty-list-detectors
+!match aws guardduty list-detectors
+!unless --output --query -o
+!to "aws guardduty list-detectors --query 'DetectorIds' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-guardduty-list-findings
+!match aws guardduty list-findings
+!unless --output --query -o
+!to "aws guardduty list-findings --query 'FindingIds' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-guardduty-get-findings
+!match aws guardduty get-findings
+!unless --output --query -o
+!to "aws guardduty get-findings --query 'Findings[].[Id,Title,Type,Severity,UpdatedAt]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-securityhub-get-findings
+!match aws securityhub get-findings
+!unless --output --query -o
+!to "aws securityhub get-findings --query 'Findings[].[Id,Title,Severity.Label,Resources[0].Id,UpdatedAt]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-configservice-describe-config-rules
+!match aws configservice describe-config-rules
+!unless --output --query -o
+!to "aws configservice describe-config-rules --query 'ConfigRules[].[ConfigRuleName,ConfigRuleId,ConfigRuleState]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-configservice-describe-compliance-by-config-rule
+!match aws configservice describe-compliance-by-config-rule
+!unless --output --query -o
+!to "aws configservice describe-compliance-by-config-rule --query 'ComplianceByConfigRules[].[ConfigRuleName,Compliance.ComplianceType]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-inspector2-list-findings
+!match aws inspector2 list-findings
+!unless --output --query -o
+!to "aws inspector2 list-findings --query 'findings[].[findingArn,severity,status,title]' --output text --no-cli-pager"
+!announce true
+
+# Backup / Organizations / RAM / License Manager
+
+!rewrite aws-backup-list-backup-plans
+!match aws backup list-backup-plans
+!unless --output --query -o
+!to "aws backup list-backup-plans --query 'BackupPlansList[].[BackupPlanId,BackupPlanName,CreationDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-backup-list-backup-vaults
+!match aws backup list-backup-vaults
+!unless --output --query -o
+!to "aws backup list-backup-vaults --query 'BackupVaultList[].[BackupVaultName,BackupVaultArn,NumberOfRecoveryPoints]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-backup-list-backup-jobs
+!match aws backup list-backup-jobs
+!unless --output --query -o
+!to "aws backup list-backup-jobs --query 'BackupJobs[].[BackupJobId,State,ResourceType,CreationDate]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-organizations-list-accounts
+!match aws organizations list-accounts
+!unless --output --query -o
+!to "aws organizations list-accounts --query 'Accounts[].[Id,Name,Email,Status,JoinedTimestamp]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-organizations-list-organizational-units-for-parent
+!match aws organizations list-organizational-units-for-parent
+!unless --output --query -o
+!to "aws organizations list-organizational-units-for-parent --query 'OrganizationalUnits[].[Id,Name,Arn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-organizations-list-roots
+!match aws organizations list-roots
+!unless --output --query -o
+!to "aws organizations list-roots --query 'Roots[].[Id,Name,Arn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-organizations-list-policies
+!match aws organizations list-policies
+!unless --output --query -o
+!to "aws organizations list-policies --query 'Policies[].[Id,Name,Description,Type]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ram-list-resource-shares
+!match aws ram list-resource-shares
+!unless --output --query -o
+!to "aws ram list-resource-shares --query 'resourceShares[].[name,resourceShareArn,status]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-license-manager-list-license-configurations
+!match aws license-manager list-license-configurations
+!unless --output --query -o
+!to "aws license-manager list-license-configurations --query 'LicenseConfigurations[].[LicenseConfigurationId,Name,Description,LicenseCount]' --output text --no-cli-pager"
+!announce true
+
+# Data services -- Redshift / ElastiCache / DocDB / Neptune / OpenSearch / MSK / MQ / Timestream
+
+!rewrite aws-redshift-describe-clusters
+!match aws redshift describe-clusters
+!unless --output --query -o
+!to "aws redshift describe-clusters --query 'Clusters[].[ClusterIdentifier,ClusterStatus,NodeType,NumberOfNodes,DBName]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-redshift-describe-cluster-snapshots
+!match aws redshift describe-cluster-snapshots
+!unless --output --query -o
+!to "aws redshift describe-cluster-snapshots --query 'Snapshots[].[SnapshotIdentifier,ClusterIdentifier,SnapshotType,Status,SnapshotCreateTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-elasticache-describe-cache-clusters
+!match aws elasticache describe-cache-clusters
+!unless --output --query -o
+!to "aws elasticache describe-cache-clusters --query 'CacheClusters[].[CacheClusterId,CacheClusterStatus,Engine,EngineVersion,CacheNodeType]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-elasticache-describe-replication-groups
+!match aws elasticache describe-replication-groups
+!unless --output --query -o
+!to "aws elasticache describe-replication-groups --query 'ReplicationGroups[].[ReplicationGroupId,Status]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-docdb-describe-db-clusters
+!match aws docdb describe-db-clusters
+!unless --output --query -o
+!to "aws docdb describe-db-clusters --query 'DBClusters[].[DBClusterIdentifier,Status,Engine,EngineVersion]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-docdb-describe-db-instances
+!match aws docdb describe-db-instances
+!unless --output --query -o
+!to "aws docdb describe-db-instances --query 'DBInstances[].[DBInstanceIdentifier,DBInstanceStatus,DBInstanceClass]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-neptune-describe-db-clusters
+!match aws neptune describe-db-clusters
+!unless --output --query -o
+!to "aws neptune describe-db-clusters --query 'DBClusters[].[DBClusterIdentifier,Status,Engine,EngineVersion]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-neptune-describe-db-instances
+!match aws neptune describe-db-instances
+!unless --output --query -o
+!to "aws neptune describe-db-instances --query 'DBInstances[].[DBInstanceIdentifier,DBInstanceStatus,DBInstanceClass]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-opensearch-list-domain-names
+!match aws opensearch list-domain-names
+!unless --output --query -o
+!to "aws opensearch list-domain-names --query 'DomainNames[].[DomainName,EngineType]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-opensearch-describe-domain
+!match aws opensearch describe-domain
+!unless --output --query -o
+!to "aws opensearch describe-domain --query 'DomainStatus.[DomainName,ClusterConfig.InstanceType,ClusterConfig.InstanceCount,Endpoint]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-opensearch-describe-domains
+!match aws opensearch describe-domains
+!unless --output --query -o
+!to "aws opensearch describe-domains --query 'DomainStatusList[].[DomainName,ClusterConfig.InstanceType,ClusterConfig.InstanceCount]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-kafka-list-clusters
+!match aws kafka list-clusters
+!unless --output --query -o
+!to "aws kafka list-clusters --query 'ClusterInfoList[].[ClusterName,ClusterArn,State,CurrentBrokerSoftwareInfo.KafkaVersion]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-kafka-describe-cluster
+!match aws kafka describe-cluster
+!unless --output --query -o
+!to "aws kafka describe-cluster --query 'ClusterInfo.[ClusterName,State,NumberOfBrokerNodes,CurrentBrokerSoftwareInfo.KafkaVersion]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-mq-list-brokers
+!match aws mq list-brokers
+!unless --output --query -o
+!to "aws mq list-brokers --query 'BrokerSummaries[].[BrokerId,BrokerName,BrokerState,EngineType]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-timestream-write-list-databases
+!match aws timestream-write list-databases
+!unless --output --query -o
+!to "aws timestream-write list-databases --query 'Databases[].[DatabaseName,Arn,CreationTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-timestream-write-list-tables
+!match aws timestream-write list-tables
+!unless --output --query -o
+!to "aws timestream-write list-tables --query 'Tables[].[TableName,DatabaseName,TableStatus]' --output text --no-cli-pager"
+!announce true
+
+# CloudTrail / IoT / AppConfig / Transfer / Directory Service / Workspaces / Connect
+
+!rewrite aws-cloudtrail-list-trails
+!match aws cloudtrail list-trails
+!unless --output --query -o
+!to "aws cloudtrail list-trails --query 'Trails[].[Name,HomeRegion,TrailARN]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cloudtrail-describe-trails
+!match aws cloudtrail describe-trails
+!unless --output --query -o
+!to "aws cloudtrail describe-trails --query 'trailList[].[Name,S3BucketName,IsMultiRegionTrail,LogFileValidationEnabled]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-cloudtrail-lookup-events
+!match aws cloudtrail lookup-events
+!unless --output --query -o
+!to "aws cloudtrail lookup-events --query 'Events[].[EventTime,EventName,Username,EventSource]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-iot-list-things
+!match aws iot list-things
+!unless --output --query -o
+!to "aws iot list-things --query 'things[].[thingName,thingArn,thingTypeName,version]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-iot-list-thing-groups
+!match aws iot list-thing-groups
+!unless --output --query -o
+!to "aws iot list-thing-groups --query 'thingGroups[].[groupName,groupArn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-iot-list-policies
+!match aws iot list-policies
+!unless --output --query -o
+!to "aws iot list-policies --query 'policies[].[policyName,policyArn]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-appconfig-list-applications
+!match aws appconfig list-applications
+!unless --output --query -o
+!to "aws appconfig list-applications --query 'Items[].[Id,Name,Description]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-appconfig-list-configuration-profiles
+!match aws appconfig list-configuration-profiles
+!unless --output --query -o
+!to "aws appconfig list-configuration-profiles --query 'Items[].[Id,Name,LocationUri,Type]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-appconfig-list-environments
+!match aws appconfig list-environments
+!unless --output --query -o
+!to "aws appconfig list-environments --query 'Items[].[Id,Name,State]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-transfer-list-servers
+!match aws transfer list-servers
+!unless --output --query -o
+!to "aws transfer list-servers --query 'Servers[].[ServerId,State,IdentityProviderType]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-transfer-list-users
+!match aws transfer list-users
+!unless --output --query -o
+!to "aws transfer list-users --query 'Users[].[UserName,Role,HomeDirectory]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ds-describe-directories
+!match aws ds describe-directories
+!unless --output --query -o
+!to "aws ds describe-directories --query 'DirectoryDescriptions[].[DirectoryId,Name,Type,Stage,LaunchTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-workspaces-describe-workspaces
+!match aws workspaces describe-workspaces
+!unless --output --query -o
+!to "aws workspaces describe-workspaces --query 'Workspaces[].[WorkspaceId,UserName,State,BundleId]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-workspaces-describe-workspace-directories
+!match aws workspaces describe-workspace-directories
+!unless --output --query -o
+!to "aws workspaces describe-workspace-directories --query 'Directories[].[DirectoryId,DirectoryName,State,DirectoryType]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-connect-list-instances
+!match aws connect list-instances
+!unless --output --query -o
+!to "aws connect list-instances --query 'InstanceSummaryList[].[Id,IdentityManagementType,InstanceStatus]' --output text --no-cli-pager"
+!announce true
+
+# Bedrock / X-Ray / Cost / Budgets / Media
+
+!rewrite aws-bedrock-list-foundation-models
+!match aws bedrock list-foundation-models
+!unless --output --query -o
+!to "aws bedrock list-foundation-models --query 'modelSummaries[].[modelId,modelName,providerName]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-bedrock-list-custom-models
+!match aws bedrock list-custom-models
+!unless --output --query -o
+!to "aws bedrock list-custom-models --query 'modelSummaries[].[modelArn,modelName,baseModelName,creationTime]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-xray-get-trace-summaries
+!match aws xray get-trace-summaries
+!unless --output --query -o
+!to "aws xray get-trace-summaries --query 'TraceSummaries[].[Id,Duration,ResponseTime,HasError]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-ce-list-cost-category-definitions
+!match aws ce list-cost-category-definitions
+!unless --output --query -o
+!to "aws ce list-cost-category-definitions --query 'CostCategoryReferences[].[Name,CostCategoryArn,EffectiveStart]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-budgets-describe-budgets
+!match aws budgets describe-budgets
+!unless --output --query -o
+!to "aws budgets describe-budgets --query 'Budgets[].[BudgetName,BudgetType,TimeUnit]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-mediaconvert-list-jobs
+!match aws mediaconvert list-jobs
+!unless --output --query -o
+!to "aws mediaconvert list-jobs --query 'Jobs[].[Id,Status,CreatedAt,Queue]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-medialive-list-channels
+!match aws medialive list-channels
+!unless --output --query -o
+!to "aws medialive list-channels --query 'Channels[].[Id,Name,State,ChannelClass]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-medialive-list-inputs
+!match aws medialive list-inputs
+!unless --output --query -o
+!to "aws medialive list-inputs --query 'Inputs[].[Id,Name,Type,State]' --output text --no-cli-pager"
+!announce true
+
+!rewrite aws-mediapackage-list-channels
+!match aws mediapackage list-channels
+!unless --output --query -o
+!to "aws mediapackage list-channels --query 'Channels[].[Id,Arn,Description]' --output text --no-cli-pager"
+!announce true
+
+# ---------------------------------------------------------------------------
+# Filters -- declarative safety nets. Ordered specific-first for the longest-
+# prefix-wins registry; per-service caps stay tight because rewrites already
+# projected most calls to short tab-separated rows.
+# ---------------------------------------------------------------------------
+
+# Highest-volume specific commands first.
+
+!filter aws-cloudformation-describe-stack-events
+!match aws cloudformation describe-stack-events
+!drop "^$"
+!max-line-len 200
+!max-lines 40
+!overflow "+{n} more events"
+
+!filter aws-logs-filter-log-events
+!match aws logs filter-log-events
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more events"
+
+!filter aws-logs-tail
+!match aws logs tail
+!drop "^$"
+!max-line-len 240
+!max-lines 200
+!overflow "+{n} more lines"
+
+# Per-service catch-all filters. `!match` is longest-prefix-wins, so a more
+# specific filter above still beats these.
+
+!filter aws-ec2
+!match aws ec2
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-lambda
+!match aws lambda
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-logs
+!match aws logs
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-iam
+!match aws iam
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-cloudformation
+!match aws cloudformation
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-ecs
+!match aws ecs
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-rds
+!match aws rds
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-dynamodb
+!match aws dynamodb
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-s3api
+!match aws s3api
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-s3
+!match aws s3
+!drop "^$"
+!max-line-len 200
+!max-lines 100
+!overflow "+{n} more"
+
+!filter aws-sqs
+!match aws sqs
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-sns
+!match aws sns
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-route53
+!match aws route53
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-ssm
+!match aws ssm
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-secretsmanager
+!match aws secretsmanager
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+# Extended per-service caps for every service covered by the rewrites
+# above. If a caller opted out with --output json, the raw JSON still
+# stays bounded by these filters.
+
+!filter aws-eks
+!match aws eks
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-kms
+!match aws kms
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-apigateway
+!match aws apigateway
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-apigatewayv2
+!match aws apigatewayv2
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-stepfunctions
+!match aws stepfunctions
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-kinesis
+!match aws kinesis
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-firehose
+!match aws firehose
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-events
+!match aws events
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-cloudwatch
+!match aws cloudwatch
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more"
+
+!filter aws-autoscaling
+!match aws autoscaling
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-elbv2
+!match aws elbv2
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-elb
+!match aws elb
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-cloudfront
+!match aws cloudfront
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-acm
+!match aws acm
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-cognito-idp
+!match aws cognito-idp
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-cognito-identity
+!match aws cognito-identity
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-appsync
+!match aws appsync
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-ses
+!match aws ses
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-sesv2
+!match aws sesv2
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-codebuild
+!match aws codebuild
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-codepipeline
+!match aws codepipeline
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-codecommit
+!match aws codecommit
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-deploy
+!match aws deploy
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-athena
+!match aws athena
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-glue
+!match aws glue
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-emr
+!match aws emr
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-sagemaker
+!match aws sagemaker
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-batch
+!match aws batch
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-apprunner
+!match aws apprunner
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-amplify
+!match aws amplify
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-wafv2
+!match aws wafv2
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-guardduty
+!match aws guardduty
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-securityhub
+!match aws securityhub
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-configservice
+!match aws configservice
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-inspector2
+!match aws inspector2
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-backup
+!match aws backup
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-organizations
+!match aws organizations
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-ram
+!match aws ram
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-license-manager
+!match aws license-manager
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-redshift
+!match aws redshift
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-elasticache
+!match aws elasticache
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-docdb
+!match aws docdb
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-neptune
+!match aws neptune
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-opensearch
+!match aws opensearch
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-kafka
+!match aws kafka
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-mq
+!match aws mq
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-timestream-write
+!match aws timestream-write
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-cloudtrail
+!match aws cloudtrail
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-iot
+!match aws iot
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-appconfig
+!match aws appconfig
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-transfer
+!match aws transfer
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-ds
+!match aws ds
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-workspaces
+!match aws workspaces
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-connect
+!match aws connect
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-bedrock
+!match aws bedrock
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter aws-xray
+!match aws xray
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-ce
+!match aws ce
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-budgets
+!match aws budgets
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-mediaconvert
+!match aws mediaconvert
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-medialive
+!match aws medialive
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter aws-mediapackage
+!match aws mediapackage
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+# Final safety net for any aws command not covered above (sts, sagemaker,
+# batch, ...). Modest cap so unknown commands still get some protection.
+
+!filter aws
+!match aws
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more"
