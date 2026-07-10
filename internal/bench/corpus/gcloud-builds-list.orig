@@ -1,0 +1,55 @@
+[
+  {
+    "id": "abc123-def456-ghi789-jkl012",
+    "status": "SUCCESS",
+    "source": {"repoSource": {"projectId": "my-project", "repoName": "orders-service", "branchName": "main", "commitSha": "1234567890abcdef1234567890abcdef12345678"}},
+    "steps": [{"name": "gcr.io/cloud-builders/docker", "args": ["build", "-t", "us-central1-docker.pkg.dev/my-project/apps/orders-api:$SHORT_SHA", "."], "id": "build"}, {"name": "gcr.io/cloud-builders/docker", "args": ["push", "us-central1-docker.pkg.dev/my-project/apps/orders-api:$SHORT_SHA"], "id": "push"}, {"name": "gcr.io/google.com/cloudsdktool/cloud-sdk", "args": ["gcloud", "run", "deploy", "orders-api", "--image", "us-central1-docker.pkg.dev/my-project/apps/orders-api:$SHORT_SHA", "--region", "us-central1"], "id": "deploy"}],
+    "results": {"images": [{"name": "us-central1-docker.pkg.dev/my-project/apps/orders-api:abc1234", "digest": "sha256:xyzabc"}]},
+    "createTime": "2026-07-07T10:15:00.000Z",
+    "startTime": "2026-07-07T10:15:20.000Z",
+    "finishTime": "2026-07-07T10:18:45.000Z",
+    "duration": "205s",
+    "logsBucket": "gs://11111111.cloudbuild-logs.googleusercontent.com",
+    "options": {"machineType": "E2_HIGHCPU_8", "logging": "CLOUD_LOGGING_ONLY", "substitution_option": "ALLOW_LOOSE"},
+    "artifacts": {"images": ["us-central1-docker.pkg.dev/my-project/apps/orders-api:$SHORT_SHA"]},
+    "logUrl": "https://console.cloud.google.com/cloud-build/builds/abc123-def456-ghi789-jkl012?project=111111111111",
+    "substitutions": {"BRANCH_NAME": "main", "COMMIT_SHA": "1234567890abcdef1234567890abcdef12345678", "REPO_NAME": "orders-service", "REVISION_ID": "1234567890abcdef1234567890abcdef12345678", "SHORT_SHA": "abc1234", "TRIGGER_BUILD_CONFIG_PATH": "cloudbuild.yaml", "TRIGGER_NAME": "orders-service-main"},
+    "tags": ["orders-service", "main-branch"],
+    "projectId": "my-project",
+    "serviceAccount": "projects/my-project/serviceAccounts/cloudbuild@my-project.iam.gserviceaccount.com"
+  },
+  {
+    "id": "def456-ghi789-jkl012-mno345",
+    "status": "FAILURE",
+    "source": {"repoSource": {"repoName": "notifications-service", "branchName": "feat/retries"}},
+    "createTime": "2026-07-07T09:20:00.000Z",
+    "startTime": "2026-07-07T09:20:10.000Z",
+    "finishTime": "2026-07-07T09:22:30.000Z",
+    "duration": "140s"
+  },
+  {
+    "id": "ghi789-jkl012-mno345-pqr678",
+    "status": "SUCCESS",
+    "source": {"repoSource": {"repoName": "docs-site", "branchName": "main"}},
+    "createTime": "2026-07-06T22:00:00.000Z",
+    "startTime": "2026-07-06T22:00:15.000Z",
+    "finishTime": "2026-07-06T22:03:45.000Z",
+    "duration": "210s"
+  },
+  {
+    "id": "jkl012-mno345-pqr678-stu901",
+    "status": "WORKING",
+    "source": {"repoSource": {"repoName": "orders-service", "branchName": "feat/new-endpoint"}},
+    "createTime": "2026-07-07T11:00:00.000Z",
+    "startTime": "2026-07-07T11:00:20.000Z"
+  },
+  {
+    "id": "mno345-pqr678-stu901-vwx234",
+    "status": "CANCELLED",
+    "source": {"repoSource": {"repoName": "analytics-etl", "branchName": "main"}},
+    "createTime": "2026-07-05T14:00:00.000Z",
+    "startTime": "2026-07-05T14:00:10.000Z",
+    "finishTime": "2026-07-05T14:00:30.000Z",
+    "duration": "20s"
+  }
+]

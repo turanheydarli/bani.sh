@@ -308,5 +308,97 @@
   ],
   "readme": true,
   "group": "lockfile diffs"
+ },
+ {
+  "name": "gcloud-compute-instances-list",
+  "display": "gcloud compute instances list (5 VMs)",
+  "command": "gcloud compute instances list",
+  "min_save_pct": 85,
+  "must_keep": [
+   "prod-web-1",
+   "dev-sandbox-alice",
+   "TERMINATED",
+   "n1-standard-4",
+   "\\[banish →",
+   "value\\("
+  ],
+  "readme": true,
+  "group": "gcloud (compute, gke, run, sql, builds)"
+ },
+ {
+  "name": "gcloud-container-clusters-list",
+  "display": "gcloud container clusters list (3 GKE)",
+  "command": "gcloud container clusters list",
+  "min_save_pct": 85,
+  "must_keep": [
+   "prod-primary",
+   "staging-main",
+   "RECONCILING",
+   "1\\.29\\.4-gke\\.1043002",
+   "\\[banish →",
+   "value\\("
+  ],
+  "readme": true,
+  "group": "gcloud (compute, gke, run, sql, builds)"
+ },
+ {
+  "name": "gcloud-run-services-list",
+  "display": "gcloud run services list (4 svcs)",
+  "command": "gcloud run services list",
+  "min_save_pct": 80,
+  "must_keep": [
+   "orders-api",
+   "auth-validator",
+   "orders-api-abc123-uc\\.a\\.run\\.app",
+   "\\[banish →",
+   "value\\("
+  ],
+  "readme": true,
+  "group": "gcloud (compute, gke, run, sql, builds)"
+ },
+ {
+  "name": "gcloud-sql-instances-list",
+  "display": "gcloud sql instances list (4 SQL)",
+  "command": "gcloud sql instances list",
+  "min_save_pct": 85,
+  "must_keep": [
+   "prod-orders-db",
+   "legacy-mysql-app",
+   "MAINTENANCE",
+   "POSTGRES_15",
+   "\\[banish →",
+   "value\\("
+  ],
+  "readme": true,
+  "group": "gcloud (compute, gke, run, sql, builds)"
+ },
+ {
+  "name": "gcloud-builds-list",
+  "display": "gcloud builds list (5 builds)",
+  "command": "gcloud builds list",
+  "min_save_pct": 75,
+  "must_keep": [
+   "FAILURE",
+   "SUCCESS",
+   "feat/retries",
+   "\\[banish →",
+   "value\\("
+  ],
+  "readme": true,
+  "group": "gcloud (compute, gke, run, sql, builds)"
+ },
+ {
+  "name": "gcloud-json-native",
+  "display": "gcloud pubsub topics list --format=json (5 topics)",
+  "command": "gcloud pubsub topics list --format=json",
+  "min_save_pct": 50,
+  "must_keep": [
+   "orders-events",
+   "audit-log",
+   "dlq-orders",
+   "ACTIVE"
+  ],
+  "readme": true,
+  "group": "gcloud (compute, gke, run, sql, builds)"
  }
 ]
