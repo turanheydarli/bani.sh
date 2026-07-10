@@ -218,9 +218,7 @@ func awsScalarKeys(obj map[string]any, prefix string) []string {
 			if prefix != "" {
 				continue // only one level of nesting
 			}
-			for _, deeper := range awsScalarKeys(child, path) {
-				out = append(out, deeper)
-			}
+			out = append(out, awsScalarKeys(child, path)...)
 		}
 	}
 	return out
