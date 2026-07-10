@@ -98,6 +98,7 @@ automatically on every merge to main - reproduce it any time with
 | `dotnet build` | 96 tok | 23 tok | 76% |
 | `JSON-preferred (kubectl / gh)` | 1214 tok | 889 tok | 27% |
 | `lockfile diffs` | 1467 tok | 249 tok | 83% |
+| `az (vm, storage, webapp, aks, activity)` | 4492 tok | 707 tok | 84% |
 <!-- bench:end -->
 
 Ships with filters for git, docker, kubectl, npm/yarn/pnpm, cargo, maven, gradle,
