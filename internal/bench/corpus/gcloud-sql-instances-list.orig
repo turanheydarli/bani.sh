@@ -1,0 +1,69 @@
+[
+  {
+    "kind": "sql#instance",
+    "name": "prod-orders-db",
+    "connectionName": "my-project:us-central1:prod-orders-db",
+    "project": "my-project",
+    "state": "RUNNABLE",
+    "databaseVersion": "POSTGRES_15",
+    "region": "us-central1",
+    "gceZone": "us-central1-a",
+    "secondaryGceZone": "us-central1-b",
+    "settings": {
+      "authorizedGaeApplications": [],
+      "tier": "db-custom-4-16384",
+      "kind": "sql#settings",
+      "userLabels": {"env": "production", "team": "platform"},
+      "availabilityType": "REGIONAL",
+      "pricingPlan": "PER_USE",
+      "replicationType": "SYNCHRONOUS",
+      "activationPolicy": "ALWAYS",
+      "ipConfiguration": {"ipv4Enabled": false, "privateNetwork": "projects/my-project/global/networks/prod-vpc", "requireSsl": true, "enablePrivatePathForGoogleCloudServices": true, "authorizedNetworks": []},
+      "backupConfiguration": {"kind": "sql#backupConfiguration", "startTime": "03:00", "enabled": true, "pointInTimeRecoveryEnabled": true, "location": "us", "backupRetentionSettings": {"retentionUnit": "COUNT", "retainedBackups": 7}, "transactionLogRetentionDays": 7},
+      "dataDiskSizeGb": "500",
+      "storageAutoResize": true,
+      "storageAutoResizeLimit": "0",
+      "dataDiskType": "PD_SSD",
+      "insightsConfig": {"queryInsightsEnabled": true, "queryPlansPerMinute": 5, "queryStringLength": 1024},
+      "settingsVersion": "42"
+    },
+    "createTime": "2024-11-01T10:00:00.000Z",
+    "diskEncryptionStatus": {"kmsKeyVersionName": "projects/my-project/locations/us-central1/keyRings/sql/cryptoKeys/prod-orders/cryptoKeyVersions/1"},
+    "ipAddresses": [{"type": "PRIVATE", "ipAddress": "10.128.0.100"}],
+    "backendType": "SECOND_GEN",
+    "instanceType": "CLOUD_SQL_INSTANCE",
+    "selfLink": "https://sqladmin.googleapis.com/sql/v1beta4/projects/my-project/instances/prod-orders-db"
+  },
+  {
+    "kind": "sql#instance",
+    "name": "prod-analytics-db",
+    "connectionName": "my-project:us-central1:prod-analytics-db",
+    "state": "RUNNABLE",
+    "databaseVersion": "POSTGRES_15",
+    "region": "us-central1",
+    "gceZone": "us-central1-a",
+    "settings": {"tier": "db-custom-8-32768", "availabilityType": "ZONAL", "dataDiskSizeGb": "1000", "dataDiskType": "PD_SSD", "userLabels": {"env": "production", "purpose": "analytics"}},
+    "createTime": "2025-02-14T09:00:00.000Z"
+  },
+  {
+    "kind": "sql#instance",
+    "name": "staging-orders-db",
+    "connectionName": "my-project:us-west1:staging-orders-db",
+    "state": "RUNNABLE",
+    "databaseVersion": "POSTGRES_14",
+    "region": "us-west1",
+    "gceZone": "us-west1-a",
+    "settings": {"tier": "db-f1-micro", "availabilityType": "ZONAL", "dataDiskSizeGb": "10", "userLabels": {"env": "staging"}},
+    "createTime": "2026-03-01T14:00:00.000Z"
+  },
+  {
+    "kind": "sql#instance",
+    "name": "legacy-mysql-app",
+    "state": "MAINTENANCE",
+    "databaseVersion": "MYSQL_8_0",
+    "region": "us-east1",
+    "gceZone": "us-east1-b",
+    "settings": {"tier": "db-n1-standard-2", "availabilityType": "ZONAL", "dataDiskSizeGb": "250", "userLabels": {"env": "production", "legacy": "true"}},
+    "createTime": "2023-05-15T10:00:00.000Z"
+  }
+]

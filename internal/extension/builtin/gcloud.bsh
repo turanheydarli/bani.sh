@@ -1,0 +1,1004 @@
+!extension gcloud v:1.0
+
+# Google Cloud CLI compaction. Same two-line defense as the AWS / Azure
+# packs, adapted to gcloud's own projection language:
+#
+#   1. Rewrites project verbose default output (a padded table with
+#      headers and column dividers) to a bare tab-separated form using
+#      gcloud's own --format="value(field1,field2,...)". Every rewrite
+#      guards on --format so a caller who asked for a specific shape
+#      (json, yaml, csv, a bespoke table) is never overridden.
+#
+#   2. Per-service filters cap line length and total lines as a safety
+#      net. They fire after the rewrite (or in place of it, when the
+#      guard tripped), so an --format=json response the caller demanded
+#      stays bounded.
+#
+# gcloud's value() projection is the sharpest compaction knob available:
+# no header row, no padding, one record per line, tab-separated fields.
+# The .basename() transform trims resource URIs down to their last path
+# segment (`.../machineTypes/n1-standard-1` → `n1-standard-1`), which is
+# the single biggest per-cell win for Compute output.
+
+# ---------------------------------------------------------------------------
+# Verbs -- short aliases for the highest-frequency listing commands.
+# ---------------------------------------------------------------------------
+
+!verb gcpprojects
+!expand exec gcloud projects list
+!help "List GCP projects the caller can access"
+
+!verb gcpvms
+!expand exec gcloud compute instances list
+!help "List Compute Engine VM instances"
+
+!verb gcpdisks
+!expand exec gcloud compute disks list
+!help "List Compute Engine disks"
+
+!verb gcpnetworks
+!expand exec gcloud compute networks list
+!help "List VPC networks"
+
+!verb gcpfw
+!expand exec gcloud compute firewall-rules list
+!help "List VPC firewall rules"
+
+!verb gcpgke
+!expand exec gcloud container clusters list
+!help "List GKE clusters"
+
+!verb gcprun
+!expand exec gcloud run services list
+!help "List Cloud Run services"
+
+!verb gcpfns
+!expand exec gcloud functions list
+!help "List Cloud Functions"
+
+!verb gcpsql
+!expand exec gcloud sql instances list
+!help "List Cloud SQL instances"
+
+!verb gcpbuckets
+!expand exec gcloud storage buckets list
+!help "List Cloud Storage buckets"
+
+!verb gcpsecrets
+!expand exec gcloud secrets list
+!help "List Secret Manager secrets"
+
+!verb gcpsa
+!expand exec gcloud iam service-accounts list
+!help "List IAM service accounts"
+
+# ---------------------------------------------------------------------------
+# Rewrites -- reshape verbose default table output to tab-separated form
+# via gcloud's own --format="value(...)". Guarded on --format so explicit
+# intent (json, yaml, csv, custom table) always wins.
+# ---------------------------------------------------------------------------
+
+# Projects / auth / config / services
+
+!rewrite gcloud-projects-list
+!match gcloud projects list
+!unless --format
+!to "gcloud projects list --format='value(projectId,name,projectNumber,lifecycleState)'"
+!announce true
+
+!rewrite gcloud-organizations-list
+!match gcloud organizations list
+!unless --format
+!to "gcloud organizations list --format='value(name,displayName,creationTime,lifecycleState)'"
+!announce true
+
+!rewrite gcloud-resource-manager-folders-list
+!match gcloud resource-manager folders list
+!unless --format
+!to "gcloud resource-manager folders list --format='value(name,displayName,lifecycleState)'"
+!announce true
+
+!rewrite gcloud-auth-list
+!match gcloud auth list
+!unless --format
+!to "gcloud auth list --format='value(account,status)'"
+!announce true
+
+!rewrite gcloud-config-list
+!match gcloud config list
+!unless --format
+!to "gcloud config list --format='value(core.project,core.account,compute.zone,compute.region)'"
+!announce true
+
+!rewrite gcloud-config-configurations-list
+!match gcloud config configurations list
+!unless --format
+!to "gcloud config configurations list --format='value(name,is_active,account,project)'"
+!announce true
+
+!rewrite gcloud-services-list
+!match gcloud services list
+!unless --format
+!to "gcloud services list --format='value(config.name,config.title)'"
+!announce true
+
+# Compute Engine -- instances, disks, images, snapshots, networks, firewalls,
+# routes, load balancing, backend services, addresses, routers, templates
+
+!rewrite gcloud-compute-instances-list
+!match gcloud compute instances list
+!unless --format
+!to "gcloud compute instances list --format='value(name,zone.basename(),machineType.basename(),status,networkInterfaces[0].networkIP,networkInterfaces[0].accessConfigs[0].natIP)'"
+!announce true
+
+!rewrite gcloud-compute-instances-describe
+!match gcloud compute instances describe
+!unless --format
+!to "gcloud compute instances describe --format='value(name,zone.basename(),machineType.basename(),status,creationTimestamp)'"
+!announce true
+
+!rewrite gcloud-compute-disks-list
+!match gcloud compute disks list
+!unless --format
+!to "gcloud compute disks list --format='value(name,zone.basename(),sizeGb,type.basename(),status)'"
+!announce true
+
+!rewrite gcloud-compute-images-list
+!match gcloud compute images list
+!unless --format
+!to "gcloud compute images list --format='value(name,family,status,creationTimestamp)'"
+!announce true
+
+!rewrite gcloud-compute-snapshots-list
+!match gcloud compute snapshots list
+!unless --format
+!to "gcloud compute snapshots list --format='value(name,diskSizeGb,sourceDisk.basename(),status)'"
+!announce true
+
+!rewrite gcloud-compute-networks-list
+!match gcloud compute networks list
+!unless --format
+!to "gcloud compute networks list --format='value(name,subnet_mode,bgp_routing_mode,ipv4_range)'"
+!announce true
+
+!rewrite gcloud-compute-networks-subnets-list
+!match gcloud compute networks subnets list
+!unless --format
+!to "gcloud compute networks subnets list --format='value(name,region.basename(),network.basename(),ipCidrRange)'"
+!announce true
+
+!rewrite gcloud-compute-firewall-rules-list
+!match gcloud compute firewall-rules list
+!unless --format
+!to "gcloud compute firewall-rules list --format='value(name,network.basename(),direction,priority,sourceRanges.list(),allowed[0].IPProtocol)'"
+!announce true
+
+!rewrite gcloud-compute-routes-list
+!match gcloud compute routes list
+!unless --format
+!to "gcloud compute routes list --format='value(name,network.basename(),destRange,nextHopGateway.basename())'"
+!announce true
+
+!rewrite gcloud-compute-forwarding-rules-list
+!match gcloud compute forwarding-rules list
+!unless --format
+!to "gcloud compute forwarding-rules list --format='value(name,region.basename(),IPAddress,IPProtocol,portRange,target.basename())'"
+!announce true
+
+!rewrite gcloud-compute-backend-services-list
+!match gcloud compute backend-services list
+!unless --format
+!to "gcloud compute backend-services list --format='value(name,backends[].group.basename(),protocol,loadBalancingScheme)'"
+!announce true
+
+!rewrite gcloud-compute-url-maps-list
+!match gcloud compute url-maps list
+!unless --format
+!to "gcloud compute url-maps list --format='value(name,defaultService.basename())'"
+!announce true
+
+!rewrite gcloud-compute-ssl-certificates-list
+!match gcloud compute ssl-certificates list
+!unless --format
+!to "gcloud compute ssl-certificates list --format='value(name,type,creationTimestamp,expireTime)'"
+!announce true
+
+!rewrite gcloud-compute-target-pools-list
+!match gcloud compute target-pools list
+!unless --format
+!to "gcloud compute target-pools list --format='value(name,region.basename(),sessionAffinity,backupPool.basename())'"
+!announce true
+
+!rewrite gcloud-compute-health-checks-list
+!match gcloud compute health-checks list
+!unless --format
+!to "gcloud compute health-checks list --format='value(name,type,checkIntervalSec,timeoutSec)'"
+!announce true
+
+!rewrite gcloud-compute-addresses-list
+!match gcloud compute addresses list
+!unless --format
+!to "gcloud compute addresses list --format='value(name,region.basename(),address,status,addressType)'"
+!announce true
+
+!rewrite gcloud-compute-routers-list
+!match gcloud compute routers list
+!unless --format
+!to "gcloud compute routers list --format='value(name,region.basename(),network.basename())'"
+!announce true
+
+!rewrite gcloud-compute-vpn-tunnels-list
+!match gcloud compute vpn-tunnels list
+!unless --format
+!to "gcloud compute vpn-tunnels list --format='value(name,region.basename(),status,peerIp)'"
+!announce true
+
+!rewrite gcloud-compute-instance-templates-list
+!match gcloud compute instance-templates list
+!unless --format
+!to "gcloud compute instance-templates list --format='value(name,properties.machineType.basename(),creationTimestamp)'"
+!announce true
+
+!rewrite gcloud-compute-instance-groups-list
+!match gcloud compute instance-groups list
+!unless --format
+!to "gcloud compute instance-groups list --format='value(name,zone.basename(),network.basename(),size)'"
+!announce true
+
+!rewrite gcloud-compute-target-http-proxies-list
+!match gcloud compute target-http-proxies list
+!unless --format
+!to "gcloud compute target-http-proxies list --format='value(name,urlMap.basename())'"
+!announce true
+
+!rewrite gcloud-compute-target-https-proxies-list
+!match gcloud compute target-https-proxies list
+!unless --format
+!to "gcloud compute target-https-proxies list --format='value(name,urlMap.basename(),sslCertificates[0].basename())'"
+!announce true
+
+# GKE / Container
+
+!rewrite gcloud-container-clusters-list
+!match gcloud container clusters list
+!unless --format
+!to "gcloud container clusters list --format='value(name,location,currentMasterVersion,currentNodeVersion,status)'"
+!announce true
+
+!rewrite gcloud-container-node-pools-list
+!match gcloud container node-pools list
+!unless --format
+!to "gcloud container node-pools list --format='value(name,version,config.machineType,initialNodeCount,status)'"
+!announce true
+
+!rewrite gcloud-container-operations-list
+!match gcloud container operations list
+!unless --format
+!to "gcloud container operations list --format='value(name,operationType,status,startTime,endTime)'"
+!announce true
+
+!rewrite gcloud-container-fleet-memberships-list
+!match gcloud container fleet memberships list
+!unless --format
+!to "gcloud container fleet memberships list --format='value(name,externalId,createTime)'"
+!announce true
+
+# Cloud Storage
+
+!rewrite gcloud-storage-buckets-list
+!match gcloud storage buckets list
+!unless --format
+!to "gcloud storage buckets list --format='value(name,location,storageClass,timeCreated)'"
+!announce true
+
+# Cloud Run
+
+!rewrite gcloud-run-services-list
+!match gcloud run services list
+!unless --format
+!to "gcloud run services list --format='value(metadata.name,status.url,status.latestReadyRevisionName,metadata.labels.\"cloud.googleapis.com/location\")'"
+!announce true
+
+!rewrite gcloud-run-revisions-list
+!match gcloud run revisions list
+!unless --format
+!to "gcloud run revisions list --format='value(metadata.name,metadata.labels.\"serving.knative.dev/service\",metadata.creationTimestamp)'"
+!announce true
+
+!rewrite gcloud-run-jobs-list
+!match gcloud run jobs list
+!unless --format
+!to "gcloud run jobs list --format='value(metadata.name,status.latestCreatedExecution.name,metadata.creationTimestamp)'"
+!announce true
+
+# Cloud Functions
+
+!rewrite gcloud-functions-list
+!match gcloud functions list
+!unless --format
+!to "gcloud functions list --format='value(name.basename(),state,serviceConfig.runtime,updateTime)'"
+!announce true
+
+# App Engine
+
+!rewrite gcloud-app-services-list
+!match gcloud app services list
+!unless --format
+!to "gcloud app services list --format='value(id,servingStatus)'"
+!announce true
+
+!rewrite gcloud-app-versions-list
+!match gcloud app versions list
+!unless --format
+!to "gcloud app versions list --format='value(service,id,servingStatus,version.createTime)'"
+!announce true
+
+!rewrite gcloud-app-instances-list
+!match gcloud app instances list
+!unless --format
+!to "gcloud app instances list --format='value(service,version,id,vmStatus,availability)'"
+!announce true
+
+# Cloud SQL
+
+!rewrite gcloud-sql-instances-list
+!match gcloud sql instances list
+!unless --format
+!to "gcloud sql instances list --format='value(name,databaseVersion,region,gceZone,settings.tier,state)'"
+!announce true
+
+!rewrite gcloud-sql-databases-list
+!match gcloud sql databases list
+!unless --format
+!to "gcloud sql databases list --format='value(name,charset,collation)'"
+!announce true
+
+!rewrite gcloud-sql-users-list
+!match gcloud sql users list
+!unless --format
+!to "gcloud sql users list --format='value(name,host,type)'"
+!announce true
+
+!rewrite gcloud-sql-backups-list
+!match gcloud sql backups list
+!unless --format
+!to "gcloud sql backups list --format='value(id,windowStartTime,type,status)'"
+!announce true
+
+# Firestore
+
+!rewrite gcloud-firestore-databases-list
+!match gcloud firestore databases list
+!unless --format
+!to "gcloud firestore databases list --format='value(name.basename(),type,locationId)'"
+!announce true
+
+# Spanner
+
+!rewrite gcloud-spanner-instances-list
+!match gcloud spanner instances list
+!unless --format
+!to "gcloud spanner instances list --format='value(name.basename(),config.basename(),nodeCount,displayName)'"
+!announce true
+
+!rewrite gcloud-spanner-databases-list
+!match gcloud spanner databases list
+!unless --format
+!to "gcloud spanner databases list --format='value(name.basename(),state)'"
+!announce true
+
+!rewrite gcloud-spanner-backups-list
+!match gcloud spanner backups list
+!unless --format
+!to "gcloud spanner backups list --format='value(name.basename(),database.basename(),state,createTime)'"
+!announce true
+
+# Bigtable
+
+!rewrite gcloud-bigtable-instances-list
+!match gcloud bigtable instances list
+!unless --format
+!to "gcloud bigtable instances list --format='value(name.basename(),displayName,type,state)'"
+!announce true
+
+!rewrite gcloud-bigtable-clusters-list
+!match gcloud bigtable clusters list
+!unless --format
+!to "gcloud bigtable clusters list --format='value(name.basename(),location.basename(),serveNodes,defaultStorageType,state)'"
+!announce true
+
+!rewrite gcloud-bigtable-tables-list
+!match gcloud bigtable tables list
+!unless --format
+!to "gcloud bigtable tables list --format='value(name.basename())'"
+!announce true
+
+# Pub/Sub
+
+!rewrite gcloud-pubsub-topics-list
+!match gcloud pubsub topics list
+!unless --format
+!to "gcloud pubsub topics list --format='value(name.basename())'"
+!announce true
+
+!rewrite gcloud-pubsub-subscriptions-list
+!match gcloud pubsub subscriptions list
+!unless --format
+!to "gcloud pubsub subscriptions list --format='value(name.basename(),topic.basename(),ackDeadlineSeconds,retainAckedMessages)'"
+!announce true
+
+!rewrite gcloud-pubsub-schemas-list
+!match gcloud pubsub schemas list
+!unless --format
+!to "gcloud pubsub schemas list --format='value(name.basename(),type)'"
+!announce true
+
+# Cloud Tasks / Scheduler / Workflows
+
+!rewrite gcloud-tasks-queues-list
+!match gcloud tasks queues list
+!unless --format
+!to "gcloud tasks queues list --format='value(name.basename(),state,rateLimits.maxDispatchesPerSecond)'"
+!announce true
+
+!rewrite gcloud-scheduler-jobs-list
+!match gcloud scheduler jobs list
+!unless --format
+!to "gcloud scheduler jobs list --format='value(name.basename(),schedule,state,timeZone)'"
+!announce true
+
+!rewrite gcloud-workflows-list
+!match gcloud workflows list
+!unless --format
+!to "gcloud workflows list --format='value(name.basename(),state,updateTime)'"
+!announce true
+
+!rewrite gcloud-workflows-executions-list
+!match gcloud workflows executions list
+!unless --format
+!to "gcloud workflows executions list --format='value(name.basename(),state,startTime,endTime)'"
+!announce true
+
+# Eventarc
+
+!rewrite gcloud-eventarc-triggers-list
+!match gcloud eventarc triggers list
+!unless --format
+!to "gcloud eventarc triggers list --format='value(name.basename(),eventFilters[0].value,transport.pubsub.topic.basename())'"
+!announce true
+
+# Cloud DNS
+
+!rewrite gcloud-dns-managed-zones-list
+!match gcloud dns managed-zones list
+!unless --format
+!to "gcloud dns managed-zones list --format='value(name,dnsName,description,visibility)'"
+!announce true
+
+!rewrite gcloud-dns-record-sets-list
+!match gcloud dns record-sets list
+!unless --format
+!to "gcloud dns record-sets list --format='value(name,type,ttl,rrdatas.list())'"
+!announce true
+
+# IAM / Secret Manager / KMS
+
+!rewrite gcloud-iam-service-accounts-list
+!match gcloud iam service-accounts list
+!unless --format
+!to "gcloud iam service-accounts list --format='value(email,displayName,disabled)'"
+!announce true
+
+!rewrite gcloud-iam-roles-list
+!match gcloud iam roles list
+!unless --format
+!to "gcloud iam roles list --format='value(name,title,stage)'"
+!announce true
+
+!rewrite gcloud-iam-workload-identity-pools-list
+!match gcloud iam workload-identity-pools list
+!unless --format
+!to "gcloud iam workload-identity-pools list --format='value(name.basename(),displayName,state)'"
+!announce true
+
+!rewrite gcloud-secrets-list
+!match gcloud secrets list
+!unless --format
+!to "gcloud secrets list --format='value(name.basename(),createTime,replication.userManaged.replicas[0].location)'"
+!announce true
+
+!rewrite gcloud-secrets-versions-list
+!match gcloud secrets versions list
+!unless --format
+!to "gcloud secrets versions list --format='value(name.basename(),state,createTime)'"
+!announce true
+
+!rewrite gcloud-kms-keyrings-list
+!match gcloud kms keyrings list
+!unless --format
+!to "gcloud kms keyrings list --format='value(name.basename(),createTime)'"
+!announce true
+
+!rewrite gcloud-kms-keys-list
+!match gcloud kms keys list
+!unless --format
+!to "gcloud kms keys list --format='value(name.basename(),purpose,primary.state,createTime)'"
+!announce true
+
+# Logging / Monitoring
+
+!rewrite gcloud-logging-logs-list
+!match gcloud logging logs list
+!unless --format
+!to "gcloud logging logs list --format='value(name.basename())'"
+!announce true
+
+!rewrite gcloud-logging-sinks-list
+!match gcloud logging sinks list
+!unless --format
+!to "gcloud logging sinks list --format='value(name,destination,filter)'"
+!announce true
+
+!rewrite gcloud-logging-metrics-list
+!match gcloud logging metrics list
+!unless --format
+!to "gcloud logging metrics list --format='value(name,description,filter)'"
+!announce true
+
+!rewrite gcloud-monitoring-channels-list
+!match gcloud monitoring channels list
+!unless --format
+!to "gcloud monitoring channels list --format='value(name.basename(),displayName,type,enabled)'"
+!announce true
+
+!rewrite gcloud-monitoring-dashboards-list
+!match gcloud monitoring dashboards list
+!unless --format
+!to "gcloud monitoring dashboards list --format='value(name.basename(),displayName)'"
+!announce true
+
+!rewrite gcloud-monitoring-policies-list
+!match gcloud monitoring policies list
+!unless --format
+!to "gcloud monitoring policies list --format='value(name.basename(),displayName,enabled)'"
+!announce true
+
+!rewrite gcloud-monitoring-uptime-list-configs
+!match gcloud monitoring uptime list-configs
+!unless --format
+!to "gcloud monitoring uptime list-configs --format='value(name.basename(),displayName,period,timeout)'"
+!announce true
+
+# Cloud Build / Source Repositories / Artifact Registry
+
+!rewrite gcloud-builds-list
+!match gcloud builds list
+!unless --format
+!to "gcloud builds list --format='value(id,status,source.repoSource.branchName,startTime,duration)'"
+!announce true
+
+!rewrite gcloud-builds-triggers-list
+!match gcloud builds triggers list
+!unless --format
+!to "gcloud builds triggers list --format='value(name,triggerTemplate.branchName,filename,disabled)'"
+!announce true
+
+!rewrite gcloud-source-repos-list
+!match gcloud source repos list
+!unless --format
+!to "gcloud source repos list --format='value(name.basename(),url,size)'"
+!announce true
+
+!rewrite gcloud-artifacts-repositories-list
+!match gcloud artifacts repositories list
+!unless --format
+!to "gcloud artifacts repositories list --format='value(name.basename(),format,description,mode)'"
+!announce true
+
+!rewrite gcloud-artifacts-docker-images-list
+!match gcloud artifacts docker images list
+!unless --format
+!to "gcloud artifacts docker images list --format='value(package,version,createTime,updateTime)'"
+!announce true
+
+# Vertex AI / AI Platform
+
+!rewrite gcloud-ai-models-list
+!match gcloud ai models list
+!unless --format
+!to "gcloud ai models list --format='value(name.basename(),displayName,createTime)'"
+!announce true
+
+!rewrite gcloud-ai-endpoints-list
+!match gcloud ai endpoints list
+!unless --format
+!to "gcloud ai endpoints list --format='value(name.basename(),displayName,createTime)'"
+!announce true
+
+!rewrite gcloud-ai-custom-jobs-list
+!match gcloud ai custom-jobs list
+!unless --format
+!to "gcloud ai custom-jobs list --format='value(name.basename(),displayName,state,createTime)'"
+!announce true
+
+!rewrite gcloud-ai-batch-prediction-jobs-list
+!match gcloud ai batch-prediction-jobs list
+!unless --format
+!to "gcloud ai batch-prediction-jobs list --format='value(name.basename(),displayName,state,createTime)'"
+!announce true
+
+# Dataflow / Dataproc / Composer
+
+!rewrite gcloud-dataflow-jobs-list
+!match gcloud dataflow jobs list
+!unless --format
+!to "gcloud dataflow jobs list --format='value(id,name,state,startTime)'"
+!announce true
+
+!rewrite gcloud-dataproc-clusters-list
+!match gcloud dataproc clusters list
+!unless --format
+!to "gcloud dataproc clusters list --format='value(clusterName,status.state,zone,masterConfig.machineTypeUri.basename())'"
+!announce true
+
+!rewrite gcloud-dataproc-jobs-list
+!match gcloud dataproc jobs list
+!unless --format
+!to "gcloud dataproc jobs list --format='value(reference.jobId,status.state,placement.clusterName,submittedBy)'"
+!announce true
+
+!rewrite gcloud-composer-environments-list
+!match gcloud composer environments list
+!unless --format
+!to "gcloud composer environments list --format='value(name.basename(),location,config.softwareConfig.imageVersion,state)'"
+!announce true
+
+# Deployment Manager
+
+!rewrite gcloud-deployment-manager-deployments-list
+!match gcloud deployment-manager deployments list
+!unless --format
+!to "gcloud deployment-manager deployments list --format='value(name,operation.operationType,operation.status,updateTime)'"
+!announce true
+
+# Certificate Manager
+
+!rewrite gcloud-certificate-manager-certificates-list
+!match gcloud certificate-manager certificates list
+!unless --format
+!to "gcloud certificate-manager certificates list --format='value(name.basename(),managed.state,createTime)'"
+!announce true
+
+!rewrite gcloud-certificate-manager-maps-list
+!match gcloud certificate-manager maps list
+!unless --format
+!to "gcloud certificate-manager maps list --format='value(name.basename(),description,createTime)'"
+!announce true
+
+# Batch
+
+!rewrite gcloud-batch-jobs-list
+!match gcloud batch jobs list
+!unless --format
+!to "gcloud batch jobs list --format='value(name.basename(),status.state,createTime)'"
+!announce true
+
+# Access Context Manager / VPC Access
+
+!rewrite gcloud-access-context-manager-policies-list
+!match gcloud access-context-manager policies list
+!unless --format
+!to "gcloud access-context-manager policies list --format='value(name,title,scopes)'"
+!announce true
+
+!rewrite gcloud-compute-vpc-access-connectors-list
+!match gcloud compute vpc-access connectors list
+!unless --format
+!to "gcloud compute vpc-access connectors list --format='value(name.basename(),network.basename(),state,minThroughput,maxThroughput)'"
+!announce true
+
+# Endpoints
+
+!rewrite gcloud-endpoints-services-list
+!match gcloud endpoints services list
+!unless --format
+!to "gcloud endpoints services list --format='value(serviceName,producerProjectId)'"
+!announce true
+
+# ---------------------------------------------------------------------------
+# Filters -- declarative safety nets. Ordered specific-first for the
+# longest-prefix-wins registry; per-service caps stay tight because
+# rewrites already projected most calls to short tab-separated rows.
+# ---------------------------------------------------------------------------
+
+!filter gcloud-logging-read
+!match gcloud logging read
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more entries"
+
+# Per-service catch-all filters. `!match` is longest-prefix-wins.
+
+!filter gcloud-projects
+!match gcloud projects
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-organizations
+!match gcloud organizations
+!drop "^$"
+!max-line-len 200
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-resource-manager
+!match gcloud resource-manager
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-auth
+!match gcloud auth
+!drop "^$"
+!max-line-len 200
+!max-lines 30
+!overflow "+{n} more"
+
+!filter gcloud-config
+!match gcloud config
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-services
+!match gcloud services
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more"
+
+!filter gcloud-compute
+!match gcloud compute
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter gcloud-container
+!match gcloud container
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-storage
+!match gcloud storage
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more"
+
+!filter gcloud-run
+!match gcloud run
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-functions
+!match gcloud functions
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-app
+!match gcloud app
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-sql
+!match gcloud sql
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-firestore
+!match gcloud firestore
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-spanner
+!match gcloud spanner
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-bigtable
+!match gcloud bigtable
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-pubsub
+!match gcloud pubsub
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-tasks
+!match gcloud tasks
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-scheduler
+!match gcloud scheduler
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-workflows
+!match gcloud workflows
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-eventarc
+!match gcloud eventarc
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-dns
+!match gcloud dns
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter gcloud-iam
+!match gcloud iam
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-secrets
+!match gcloud secrets
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-kms
+!match gcloud kms
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-logging
+!match gcloud logging
+!drop "^$"
+!max-line-len 240
+!max-lines 80
+!overflow "+{n} more"
+
+!filter gcloud-monitoring
+!match gcloud monitoring
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-builds
+!match gcloud builds
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-source
+!match gcloud source
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-artifacts
+!match gcloud artifacts
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-ai
+!match gcloud ai
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-dataflow
+!match gcloud dataflow
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-dataproc
+!match gcloud dataproc
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-composer
+!match gcloud composer
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-deployment-manager
+!match gcloud deployment-manager
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-certificate-manager
+!match gcloud certificate-manager
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-batch
+!match gcloud batch
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-access-context-manager
+!match gcloud access-context-manager
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+!filter gcloud-endpoints
+!match gcloud endpoints
+!drop "^$"
+!max-line-len 240
+!max-lines 60
+!overflow "+{n} more"
+
+# Final safety net for any gcloud command not covered above. Modest cap
+# so unknown commands still get some protection.
+
+!filter gcloud
+!match gcloud
+!drop "^$"
+!max-line-len 240
+!max-lines 100
+!overflow "+{n} more"

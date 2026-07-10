@@ -1,0 +1,35 @@
+[
+  {
+    "name": "projects/my-project/topics/orders-events",
+    "kmsKeyName": "",
+    "labels": {"env": "production", "team": "platform"},
+    "messageRetentionDuration": "604800s",
+    "messageStoragePolicy": {"allowedPersistenceRegions": ["us-central1", "us-east1"]},
+    "satisfiesPzs": true,
+    "schemaSettings": {"encoding": "ENCODING_UNSPECIFIED", "schema": "_deleted-schema_"},
+    "state": "ACTIVE"
+  },
+  {
+    "name": "projects/my-project/topics/notifications",
+    "labels": {"env": "production"},
+    "messageRetentionDuration": "604800s",
+    "state": "ACTIVE"
+  },
+  {
+    "name": "projects/my-project/topics/audit-log",
+    "labels": {"env": "production", "purpose": "compliance"},
+    "messageRetentionDuration": "2592000s",
+    "state": "ACTIVE"
+  },
+  {
+    "name": "projects/my-project/topics/dlq-orders",
+    "labels": {"env": "production", "type": "dlq"},
+    "messageRetentionDuration": "604800s",
+    "state": "ACTIVE"
+  },
+  {
+    "name": "projects/my-project/topics/analytics-events",
+    "labels": {"env": "production", "team": "data"},
+    "state": "ACTIVE"
+  }
+]

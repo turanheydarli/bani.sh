@@ -1,0 +1,5 @@
+[banish → gcloud sql instances list --format='value(name,databaseVersion,region,gceZone,settings.tier,state)']
+prod-orders-db	POSTGRES_15	us-central1	us-central1-a	db-custom-4-16384	RUNNABLE
+prod-analytics-db	POSTGRES_15	us-central1	us-central1-a	db-custom-8-32768	RUNNABLE
+staging-orders-db	POSTGRES_14	us-west1	us-west1-a	db-f1-micro	RUNNABLE
+legacy-mysql-app	MYSQL_8_0	us-east1	us-east1-b	db-n1-standard-2	MAINTENANCE

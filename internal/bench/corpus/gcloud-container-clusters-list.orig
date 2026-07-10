@@ -1,0 +1,50 @@
+[
+  {
+    "name": "prod-primary",
+    "description": "Production primary GKE cluster",
+    "location": "us-central1",
+    "locations": ["us-central1-a", "us-central1-b", "us-central1-c"],
+    "endpoint": "35.192.14.22",
+    "initialClusterVersion": "1.29.4-gke.1043002",
+    "currentMasterVersion": "1.29.4-gke.1043002",
+    "currentNodeVersion": "1.29.4-gke.1043002",
+    "status": "RUNNING",
+    "network": "prod-vpc",
+    "subnetwork": "prod-gke-subnet",
+    "clusterIpv4Cidr": "10.44.0.0/14",
+    "servicesIpv4Cidr": "34.118.224.0/20",
+    "nodePools": [
+      {"name": "default-pool", "config": {"machineType": "e2-standard-4", "diskSizeGb": 100, "oauthScopes": ["https://www.googleapis.com/auth/cloud-platform"], "serviceAccount": "default", "imageType": "COS_CONTAINERD", "diskType": "pd-standard", "shieldedInstanceConfig": {"enableIntegrityMonitoring": true}}, "initialNodeCount": 3, "management": {"autoUpgrade": true, "autoRepair": true}, "maxPodsConstraint": {"maxPodsPerNode": "110"}, "podIpv4CidrSize": 24, "locations": ["us-central1-a", "us-central1-b", "us-central1-c"], "networkConfig": {"podRange": "gke-prod-primary-pods-abc", "podIpv4CidrBlock": "10.44.0.0/14"}, "selfLink": "https://container.googleapis.com/v1/projects/my-project/locations/us-central1/clusters/prod-primary/nodePools/default-pool", "version": "1.29.4-gke.1043002", "instanceGroupUrls": ["https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-a/instanceGroupManagers/gke-prod-primary-default-pool-abc"], "status": "RUNNING", "upgradeSettings": {"maxSurge": 1, "maxUnavailable": 0, "strategy": "SURGE"}},
+      {"name": "workerpool", "config": {"machineType": "n2-standard-8", "diskSizeGb": 200, "imageType": "COS_CONTAINERD"}, "initialNodeCount": 5, "management": {"autoUpgrade": true, "autoRepair": true}, "version": "1.29.4-gke.1043002", "status": "RUNNING"}
+    ],
+    "labelFingerprint": "abc",
+    "loggingService": "logging.googleapis.com/kubernetes",
+    "monitoringService": "monitoring.googleapis.com/kubernetes",
+    "resourceLabels": {"env": "production", "team": "platform"},
+    "selfLink": "https://container.googleapis.com/v1/projects/my-project/locations/us-central1/clusters/prod-primary",
+    "createTime": "2024-08-15T10:23:00.000000000Z",
+    "zone": "us-central1"
+  },
+  {
+    "name": "prod-batch",
+    "location": "us-central1",
+    "endpoint": "35.192.14.55",
+    "currentMasterVersion": "1.28.9-gke.1000000",
+    "currentNodeVersion": "1.28.9-gke.1000000",
+    "status": "RUNNING",
+    "network": "prod-vpc",
+    "resourceLabels": {"env": "production", "purpose": "batch"},
+    "createTime": "2025-01-15T14:00:00.000000000Z"
+  },
+  {
+    "name": "staging-main",
+    "location": "us-west1",
+    "endpoint": "34.83.10.10",
+    "currentMasterVersion": "1.30.1-gke.1000000",
+    "currentNodeVersion": "1.30.1-gke.1000000",
+    "status": "RECONCILING",
+    "network": "staging-vpc",
+    "resourceLabels": {"env": "staging"},
+    "createTime": "2026-04-01T09:00:00.000000000Z"
+  }
+]

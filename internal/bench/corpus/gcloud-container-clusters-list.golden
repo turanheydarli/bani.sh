@@ -1,0 +1,4 @@
+[banish → gcloud container clusters list --format='value(name,location,currentMasterVersion,currentNodeVersion,status)']
+prod-primary	us-central1	1.29.4-gke.1043002	1.29.4-gke.1043002	RUNNING
+prod-batch	us-central1	1.28.9-gke.1000000	1.28.9-gke.1000000	RUNNING
+staging-main	us-west1	1.30.1-gke.1000000	1.30.1-gke.1000000	RECONCILING

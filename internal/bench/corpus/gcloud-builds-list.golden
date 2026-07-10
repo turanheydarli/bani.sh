@@ -1,0 +1,6 @@
+[banish → gcloud builds list --format='value(id,status,source.repoSource.branchName,startTime,duration)']
+abc123-def456-ghi789-jkl012	SUCCESS	main	2026-07-07T10:15:20.000Z	205s
+def456-ghi789-jkl012-mno345	FAILURE	feat/retries	2026-07-07T09:20:10.000Z	140s
+ghi789-jkl012-mno345-pqr678	SUCCESS	main	2026-07-06T22:00:15.000Z	210s
+jkl012-mno345-pqr678-stu901	WORKING	feat/new-endpoint	2026-07-07T11:00:20.000Z
+mno345-pqr678-stu901-vwx234	CANCELLED	main	2026-07-05T14:00:10.000Z	20s

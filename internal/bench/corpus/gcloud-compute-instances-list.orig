@@ -1,0 +1,81 @@
+[
+  {
+    "id": "1234567890123456789",
+    "creationTimestamp": "2026-06-01T14:23:00.000-07:00",
+    "name": "prod-web-1",
+    "zone": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-a",
+    "machineType": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-a/machineTypes/n1-standard-4",
+    "status": "RUNNING",
+    "canIpForward": false,
+    "networkInterfaces": [
+      {
+        "network": "https://www.googleapis.com/compute/v1/projects/my-project/global/networks/prod-vpc",
+        "subnetwork": "https://www.googleapis.com/compute/v1/projects/my-project/regions/us-central1/subnetworks/prod-web-subnet",
+        "networkIP": "10.128.0.15",
+        "name": "nic0",
+        "accessConfigs": [{"kind": "compute#accessConfig", "type": "ONE_TO_ONE_NAT", "name": "External NAT", "natIP": "34.72.15.42", "networkTier": "PREMIUM"}],
+        "fingerprint": "abc123",
+        "kind": "compute#networkInterface",
+        "stackType": "IPV4_ONLY"
+      }
+    ],
+    "disks": [{"kind": "compute#attachedDisk", "type": "PERSISTENT", "mode": "READ_WRITE", "source": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-a/disks/prod-web-1", "deviceName": "prod-web-1", "index": 0, "boot": true, "autoDelete": true, "licenses": ["https://www.googleapis.com/compute/v1/projects/debian-cloud/global/licenses/debian-12"], "interface": "SCSI", "guestOsFeatures": [{"type": "UEFI_COMPATIBLE"}, {"type": "VIRTIO_SCSI_MULTIQUEUE"}, {"type": "GVNIC"}], "diskSizeGb": "30"}],
+    "metadata": {"kind": "compute#metadata", "fingerprint": "abc123", "items": [{"key": "startup-script", "value": "#!/bin/bash\napt-get update"}]},
+    "serviceAccounts": [{"email": "prod-web@my-project.iam.gserviceaccount.com", "scopes": ["https://www.googleapis.com/auth/cloud-platform"]}],
+    "selfLink": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-a/instances/prod-web-1",
+    "scheduling": {"onHostMaintenance": "MIGRATE", "automaticRestart": true, "preemptible": false, "provisioningModel": "STANDARD"},
+    "cpuPlatform": "Intel Broadwell",
+    "labelFingerprint": "abc",
+    "labels": {"env": "production", "team": "platform"},
+    "startRestricted": false,
+    "deletionProtection": true,
+    "reservationAffinity": {"consumeReservationType": "ANY_RESERVATION"},
+    "displayDevice": {"enableDisplay": false},
+    "shieldedInstanceConfig": {"enableSecureBoot": false, "enableVtpm": true, "enableIntegrityMonitoring": true},
+    "shieldedInstanceIntegrityPolicy": {"updateAutoLearnPolicy": true},
+    "fingerprint": "abc123",
+    "lastStartTimestamp": "2026-06-01T14:23:45.123-07:00",
+    "kind": "compute#instance"
+  },
+  {
+    "id": "2345678901234567890",
+    "creationTimestamp": "2026-06-05T09:15:00.000-07:00",
+    "name": "prod-web-2",
+    "zone": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-b",
+    "machineType": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-b/machineTypes/n1-standard-4",
+    "status": "RUNNING",
+    "networkInterfaces": [{"networkIP": "10.128.1.20", "accessConfigs": [{"natIP": "34.72.15.55"}]}],
+    "labels": {"env": "production"},
+    "kind": "compute#instance"
+  },
+  {
+    "id": "3456789012345678901",
+    "creationTimestamp": "2026-05-20T11:00:00.000-07:00",
+    "name": "prod-worker-1",
+    "zone": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-a",
+    "machineType": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-a/machineTypes/n1-highmem-8",
+    "status": "RUNNING",
+    "networkInterfaces": [{"networkIP": "10.128.0.30"}],
+    "labels": {"env": "production", "team": "data"}
+  },
+  {
+    "id": "4567890123456789012",
+    "creationTimestamp": "2026-07-01T15:00:00.000-07:00",
+    "name": "staging-api-1",
+    "zone": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-c",
+    "machineType": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-central1-c/machineTypes/e2-standard-2",
+    "status": "RUNNING",
+    "networkInterfaces": [{"networkIP": "10.130.0.10", "accessConfigs": [{"natIP": "35.184.12.5"}]}],
+    "labels": {"env": "staging"}
+  },
+  {
+    "id": "5678901234567890123",
+    "creationTimestamp": "2026-07-06T09:00:00.000-07:00",
+    "name": "dev-sandbox-alice",
+    "zone": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-east1-b",
+    "machineType": "https://www.googleapis.com/compute/v1/projects/my-project/zones/us-east1-b/machineTypes/e2-medium",
+    "status": "TERMINATED",
+    "networkInterfaces": [{"networkIP": "10.142.0.5"}],
+    "labels": {"env": "development", "owner": "alice"}
+  }
+]

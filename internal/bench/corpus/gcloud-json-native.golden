@@ -1,0 +1,7 @@
+5 results
+NAME              KMSKEYNAME  STATE   TYPE  ENV         MESSAGERETENTIONDURATION
+orders-events                 ACTIVE        production  604800s
+notifications                 ACTIVE        production  604800s
+audit-log                     ACTIVE        production  2592000s
+dlq-orders                    ACTIVE  dlq   production  604800s
+analytics-events              ACTIVE        production  

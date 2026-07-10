@@ -1,0 +1,51 @@
+[
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "orders-api",
+      "namespace": "111111111111",
+      "selfLink": "/apis/serving.knative.dev/v1/namespaces/111111111111/services/orders-api",
+      "uid": "abc-123",
+      "resourceVersion": "AAYaBcDeFg",
+      "generation": 4,
+      "creationTimestamp": "2025-04-15T10:00:00.123Z",
+      "labels": {"cloud.googleapis.com/location": "us-central1"},
+      "annotations": {"run.googleapis.com/client-name": "gcloud", "run.googleapis.com/ingress": "all", "run.googleapis.com/lastModifier": "alice.ops@example.com", "serving.knative.dev/creator": "alice.ops@example.com"}
+    },
+    "spec": {
+      "template": {
+        "metadata": {"name": "orders-api-00042-abc", "labels": {"run.googleapis.com/startupProbeType": "Default"}, "annotations": {"autoscaling.knative.dev/maxScale": "100", "run.googleapis.com/execution-environment": "gen2"}},
+        "spec": {"containerConcurrency": 80, "timeoutSeconds": 300, "serviceAccountName": "orders-api@my-project.iam.gserviceaccount.com", "containers": [{"image": "us-central1-docker.pkg.dev/my-project/apps/orders-api@sha256:abc123def456", "ports": [{"name": "http1", "containerPort": 8080}], "env": [{"name": "DB_URL", "value": "postgresql://..."}], "resources": {"limits": {"cpu": "1000m", "memory": "512Mi"}}, "startupProbe": {"tcpSocket": {"port": 8080}, "timeoutSeconds": 240, "periodSeconds": 240, "failureThreshold": 1}}]}
+      },
+      "traffic": [{"percent": 100, "latestRevision": true}]
+    },
+    "status": {
+      "observedGeneration": 4,
+      "conditions": [{"type": "Ready", "status": "True", "lastTransitionTime": "2026-07-05T14:23:00.000Z"}, {"type": "ConfigurationsReady", "status": "True", "lastTransitionTime": "2026-07-05T14:22:55.000Z"}, {"type": "RoutesReady", "status": "True", "lastTransitionTime": "2026-07-05T14:23:00.000Z"}],
+      "latestReadyRevisionName": "orders-api-00042-abc",
+      "latestCreatedRevisionName": "orders-api-00042-abc",
+      "traffic": [{"revisionName": "orders-api-00042-abc", "percent": 100, "latestRevision": true}],
+      "url": "https://orders-api-abc123-uc.a.run.app",
+      "address": {"url": "https://orders-api-abc123-uc.a.run.app"}
+    }
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {"name": "notifications-fanout", "namespace": "111111111111", "labels": {"cloud.googleapis.com/location": "us-central1"}, "creationTimestamp": "2025-06-20T15:00:00.000Z"},
+    "status": {"latestReadyRevisionName": "notifications-fanout-00007-def", "url": "https://notifications-fanout-def456-uc.a.run.app"}
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {"name": "docs-site", "namespace": "111111111111", "labels": {"cloud.googleapis.com/location": "us-central1"}, "creationTimestamp": "2026-01-10T09:00:00.000Z"},
+    "status": {"latestReadyRevisionName": "docs-site-00003-ghi", "url": "https://docs-site-ghi789-uc.a.run.app"}
+  },
+  {
+    "apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {"name": "auth-validator", "namespace": "111111111111", "labels": {"cloud.googleapis.com/location": "us-east1"}, "creationTimestamp": "2026-05-01T11:00:00.000Z"},
+    "status": {"latestReadyRevisionName": "auth-validator-00012-jkl", "url": "https://auth-validator-jkl012-ue.a.run.app"}
+  }
+]

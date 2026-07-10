@@ -1,0 +1,4 @@
+orders-api	https://orders-api-abc123-uc.a.run.app	orders-api-00042-abc	us-central1
+notifications-fanout	https://notifications-fanout-def456-uc.a.run.app	notifications-fanout-00007-def	us-central1
+docs-site	https://docs-site-ghi789-uc.a.run.app	docs-site-00003-ghi	us-central1
+auth-validator	https://auth-validator-jkl012-ue.a.run.app	auth-validator-00012-jkl	us-east1
