@@ -76,7 +76,7 @@ func TestReadmeTableGroups(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	table := ReadmeTable(results)
+	table := ReadmeTable(results, "char-based estimate")
 	if n := strings.Count(table, "git (status, diff, log)"); n != 1 {
 		t.Errorf("want exactly one aggregated git row, got %d:\n%s", n, table)
 	}
@@ -101,7 +101,7 @@ func TestUpdateReadme(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changed, err := UpdateReadme(path, results)
+	changed, err := UpdateReadme(path, results, "char-based estimate")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestUpdateReadme(t *testing.T) {
 		t.Errorf("content after end marker was not preserved:\n%s", got)
 	}
 
-	changed, err = UpdateReadme(path, results)
+	changed, err = UpdateReadme(path, results, "char-based estimate")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestUpdateReadme(t *testing.T) {
 func TestUpdateReadmeMissingMarkers(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "README.md")
 	os.WriteFile(path, []byte("no markers here\n"), 0644)
-	if _, err := UpdateReadme(path, nil); err == nil {
+	if _, err := UpdateReadme(path, nil, "char-based estimate"); err == nil {
 		t.Error("expected error for missing markers")
 	}
 }

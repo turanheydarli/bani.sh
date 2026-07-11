@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"go.banish.sh/banish/internal/token/counter"
 )
 
 // Entry records a single command execution.
@@ -146,11 +148,13 @@ func FormatStats(s *Stats) string {
 	return fmt.Sprintf("commands:%d saved:%d tokens (%.1f%%)", s.Commands, s.SavedTokens, s.SavingsPct)
 }
 
-// EstimateTokens estimates token count from a string (~4 chars per token).
-func EstimateTokens(s string) int64 {
-	n := int64(len(s)) / 4
-	if n == 0 && len(s) > 0 {
-		n = 1
-	}
+// EstimateTokensCharBased estimates token count as len(s)/4. This is a
+// char-based heuristic, not Claude's tokenizer - expect roughly +/-30% error
+// depending on content (non-ASCII, code identifiers, whitespace runs, and
+// box-drawing tables all skew it). Runtime tracking uses it because it is
+// free and offline; anything that publishes savings numbers should prefer
+// counter.Anthropic (see internal/token/counter).
+func EstimateTokensCharBased(s string) int64 {
+	n, _ := counter.CharHeuristic{}.Count(s)
 	return n
 }

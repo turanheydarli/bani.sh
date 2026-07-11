@@ -7,6 +7,7 @@ import (
 	"go.banish.sh/banish/internal/ast"
 	"go.banish.sh/banish/internal/compact"
 	"go.banish.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/token/counter"
 )
 
 // FallbackHandler returns a VerbHandler that executes unknown verbs as OS
@@ -110,8 +111,8 @@ func applyCompaction(filters *compact.Registry, cmdline, stdout, stderr string, 
 	// These fields are NOT serialized to output -- only used by the analyzer.
 	rawLen := len(stdout) + len(stderr)
 	compactLen := len(text)
-	result.RawTokens = int64(rawLen / 4)
-	result.OutTokens = int64(compactLen / 4)
+	result.RawTokens, _ = counter.CharHeuristic{}.Count(stdout + stderr)
+	result.OutTokens, _ = counter.CharHeuristic{}.Count(text)
 	if rawLen > 0 && compactLen < rawLen {
 		result.SavedPct = (rawLen - compactLen) * 100 / rawLen
 	}

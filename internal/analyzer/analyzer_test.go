@@ -73,7 +73,7 @@ func TestFrequency(t *testing.T) {
 	}
 }
 
-func TestEstimateTokens(t *testing.T) {
+func TestEstimateTokensCharBased(t *testing.T) {
 	tests := []struct {
 		input string
 		want  int64
@@ -84,9 +84,9 @@ func TestEstimateTokens(t *testing.T) {
 		{"ls /var/log ext:log", 4},
 	}
 	for _, tt := range tests {
-		got := EstimateTokens(tt.input)
+		got := EstimateTokensCharBased(tt.input)
 		if got != tt.want {
-			t.Errorf("EstimateTokens(%q) = %d, want %d", tt.input, got, tt.want)
+			t.Errorf("EstimateTokensCharBased(%q) = %d, want %d", tt.input, got, tt.want)
 		}
 	}
 }
