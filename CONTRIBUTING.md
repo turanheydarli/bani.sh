@@ -57,6 +57,28 @@ Branch off `main` with a short, descriptive name (`filter-docker-build`,
 quick before/after token count if you have one. Don't worry about a perfect diff - maintainers
 will help shape it. The goal is the merge, not a flawless first try.
 
+## Releases (maintainers)
+
+Releases are cut from the Actions UI, not from a local machine: run the
+`tag-release` workflow, pick a channel, and enter the core version (e.g.
+`0.6.0`). The workflow computes and pushes the tag, which triggers the
+GoReleaser pipeline.
+
+- `beta` tags `v0.6.0-beta.N` (N auto-increments) - a release candidate,
+  published as a GitHub prerelease. Only developers who opted in see it:
+  `banish upgrade --channel beta`, `{"channel": "beta"}` in
+  `~/.banish/config.json`, or `BANISH_CHANNEL=beta` with the install script.
+- `rc` works the same with `v0.6.0-rc.N`, for the final candidate before a
+  stable release.
+- `stable` tags `v0.6.0` - the global release. `/releases/latest`, the
+  install script, Homebrew, and plain `banish upgrade` all move to it, beta
+  users included.
+
+Prereleases never reach the Homebrew tap or the Discord announcement; both
+are keyed off the `-` in the tag. The workflow needs a `RELEASE_TOKEN`
+secret (a fine-grained PAT with contents:write on this repo), because tags
+pushed with the default `GITHUB_TOKEN` do not trigger downstream workflows.
+
 ## Recognition
 
 Every merged PR is credited by name in the release notes. Your change ships, and

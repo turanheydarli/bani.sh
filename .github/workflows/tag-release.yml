@@ -1,0 +1,96 @@
+name: tag-release
+
+# Cut a release from the Actions UI instead of tagging locally.
+#
+# Pick a channel and a core version; the job computes the tag, creates it on
+# the selected ref, and pushes it. The tag push then triggers the existing
+# release workflow (GoReleaser) and, for stable tags, the Discord announce.
+#
+#   stable  ->  v0.6.0
+#   rc      ->  v0.6.0-rc.N     (N auto-increments)
+#   beta    ->  v0.6.0-beta.N   (N auto-increments)
+#
+# Prerelease tags are published as GitHub prereleases (GoReleaser
+# "prerelease: auto"), so /releases/latest, the install script, and stable
+# "banish upgrade" never see them. Developers opt in with
+# "banish upgrade --channel beta" or {"channel": "beta"} in
+# ~/.banish/config.json.
+#
+# Requires a RELEASE_TOKEN secret (fine-grained PAT with contents:write on
+# this repo). Tags pushed with the default GITHUB_TOKEN do not trigger other
+# workflows, so the release pipeline would never run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Core version without v or suffix (e.g. 0.6.0)"
+        required: true
+      channel:
+        description: "Release channel"
+        type: choice
+        options:
+          - beta
+          - rc
+          - stable
+        default: beta
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require RELEASE_TOKEN
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "::error::RELEASE_TOKEN secret is not set. Add a fine-grained PAT with contents:write; the default GITHUB_TOKEN cannot trigger the release workflow." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Compute tag
+        id: compute
+        env:
+          VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::version must be x.y.z without v or suffix, got '$VERSION'" >&2
+            exit 1
+          fi
+          if [ "$CHANNEL" = "stable" ]; then
+            tag="v${VERSION}"
+            if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "::error::tag ${tag} already exists" >&2
+              exit 1
+            fi
+          else
+            # Next free number in the v<version>-<channel>.N series.
+            n=$(git tag -l "v${VERSION}-${CHANNEL}.*" \
+              | sed -E "s/^v${VERSION}-${CHANNEL}\.//" \
+              | grep -E '^[0-9]+$' | sort -n | tail -1 || true)
+            n=$(( ${n:-0} + 1 ))
+            tag="v${VERSION}-${CHANNEL}.${n}"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "computed ${tag} on $(git rev-parse --short HEAD)"
+
+      - name: Create and push tag
+        env:
+          TAG: ${{ steps.compute.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "refs/tags/$TAG"
+          echo "pushed $TAG - the release workflow takes it from here"
