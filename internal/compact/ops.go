@@ -47,15 +47,32 @@ func (o FilterOps) IsZero() bool {
 // Apply runs the configured ops over text. Invalid regexes disable their op
 // rather than failing the command -- filters must never lose output.
 func (o FilterOps) Apply(text string) string {
+	out, _ := o.ApplyDetail(text, "", false)
+	return out
+}
+
+// ApplyDetail runs the configured ops over text and accounts for every line
+// they remove, one DroppedGroup per op stage labeled "<label>.<op>". When
+// trace is set, each contiguous run dropped by !drop/!keep is replaced in
+// place by an annotation line instead of vanishing silently (group-by and
+// max-lines truncation already emit overflow markers inline).
+func (o FilterOps) ApplyDetail(text, label string, trace bool) (string, []DroppedGroup) {
 	if o.IsZero() || text == "" {
-		return text
+		return text, nil
 	}
 	lines := strings.Split(text, "\n")
+	var groups []DroppedGroup
 
 	tallies := o.countTallies(lines)
-	lines = o.applyDropKeep(lines)
+	lines, dropped := o.applyDropKeep(lines, label, trace)
+	if dropped > 0 {
+		groups = append(groups, DroppedGroup{Filter: label + ".drop", Lines: dropped})
+	}
 	lines = o.applySubs(lines)
-	lines = o.applyGroupBy(lines)
+	lines, dropped = o.applyGroupBy(lines)
+	if dropped > 0 {
+		groups = append(groups, DroppedGroup{Filter: label + ".per-group", Lines: dropped})
+	}
 
 	if o.MaxLineLen > 0 {
 		for i, l := range lines {
@@ -68,10 +85,11 @@ func (o FilterOps) Apply(text string) string {
 	if o.MaxLines > 0 && len(lines) > o.MaxLines {
 		omitted := len(lines) - o.MaxLines
 		lines = append(lines[:o.MaxLines], o.overflowMarker(omitted))
+		groups = append(groups, DroppedGroup{Filter: label + ".max-lines", Lines: omitted})
 	}
 
 	lines = append(lines, tallies...)
-	return strings.Join(lines, "\n")
+	return strings.Join(lines, "\n"), groups
 }
 
 // countTallies evaluates tally rules against the unfiltered input.
@@ -109,7 +127,10 @@ func (o FilterOps) applySubs(lines []string) []string {
 	return lines
 }
 
-func (o FilterOps) applyDropKeep(lines []string) []string {
+// applyDropKeep removes lines per the Drop/Keep regexes and returns the
+// dropped count. In trace mode each contiguous dropped run is replaced by
+// one annotation line so filter authors can see where content went.
+func (o FilterOps) applyDropKeep(lines []string, label string, trace bool) ([]string, int) {
 	var dropRe, keepRe *regexp.Regexp
 	if o.Drop != "" {
 		dropRe, _ = regexp.Compile(o.Drop)
@@ -118,31 +139,40 @@ func (o FilterOps) applyDropKeep(lines []string) []string {
 		keepRe, _ = regexp.Compile(o.Keep)
 	}
 	if dropRe == nil && keepRe == nil {
-		return lines
+		return lines, 0
 	}
-	out := lines[:0]
+	out := make([]string, 0, len(lines))
+	dropped, run := 0, 0
+	flush := func() {
+		if run > 0 && trace {
+			out = append(out, traceAnnotation(run, label+".drop"))
+		}
+		run = 0
+	}
 	for _, l := range lines {
-		if dropRe != nil && dropRe.MatchString(l) {
+		if (dropRe != nil && dropRe.MatchString(l)) || (keepRe != nil && !keepRe.MatchString(l)) {
+			dropped++
+			run++
 			continue
 		}
-		if keepRe != nil && !keepRe.MatchString(l) {
-			continue
-		}
+		flush()
 		out = append(out, l)
 	}
-	return out
+	flush()
+	return out, dropped
 }
 
-// applyGroupBy keeps the first PerGroup lines per group key. Lines that do
-// not match the group regex are always kept. One overflow marker is emitted
-// per truncated group, at the point of truncation.
-func (o FilterOps) applyGroupBy(lines []string) []string {
+// applyGroupBy keeps the first PerGroup lines per group key and returns the
+// truncated line count. Lines that do not match the group regex are always
+// kept. One overflow marker is emitted per truncated group, at the point of
+// truncation.
+func (o FilterOps) applyGroupBy(lines []string) ([]string, int) {
 	if o.GroupBy == "" || o.PerGroup <= 0 {
-		return lines
+		return lines, 0
 	}
 	re, err := regexp.Compile(o.GroupBy)
 	if err != nil {
-		return lines
+		return lines, 0
 	}
 	keyOf := func(l string) (string, bool) {
 		m := re.FindStringSubmatch(l)
@@ -164,6 +194,7 @@ func (o FilterOps) applyGroupBy(lines []string) []string {
 
 	kept := make(map[string]int)
 	out := make([]string, 0, len(lines))
+	dropped := 0
 	for _, l := range lines {
 		key, ok := keyOf(l)
 		if !ok {
@@ -176,9 +207,12 @@ func (o FilterOps) applyGroupBy(lines []string) []string {
 			out = append(out, l)
 		case kept[key] == o.PerGroup+1:
 			out = append(out, o.overflowMarker(totals[key]-o.PerGroup))
+			dropped++
+		default:
+			dropped++
 		}
 	}
-	return out
+	return out, dropped
 }
 
 func (o FilterOps) overflowMarker(n int) string {

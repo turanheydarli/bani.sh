@@ -18,9 +18,10 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"go.banish.sh/banish/internal/analyzer"
 	"go.banish.sh/banish/internal/compact"
 	"go.banish.sh/banish/internal/extension"
+	"go.banish.sh/banish/internal/rawcache"
+	"go.banish.sh/banish/internal/token/counter"
 )
 
 // benchNow pins the clock used by time-sensitive renderers (gh ages, etc.)
@@ -102,7 +103,13 @@ func readOptional(path string) string {
 type Pipeline struct {
 	registry *compact.Registry
 	rewriter *compact.Rewriter
+	counter  counter.Counter
 }
+
+// SetCounter swaps the tokenizer used to measure results. The default is the
+// char heuristic so tests and CI stay deterministic and offline; pass
+// counter.Anthropic for real token counts.
+func (p *Pipeline) SetCounter(c counter.Counter) { p.counter = c }
 
 // NewPipeline builds the pipeline the way cmd/banish wires the agent path:
 // builtin packs first, embedded defaults last (lowest precedence).
@@ -141,17 +148,36 @@ func NewPipeline() (*Pipeline, error) {
 
 	reg := compact.NewRegistry()
 	reg.RegisterScriptFilters(filters)
-	return &Pipeline{registry: reg, rewriter: compact.NewRewriter(rules)}, nil
+	return &Pipeline{
+		registry: reg,
+		rewriter: compact.NewRewriter(rules),
+		counter:  counter.CharHeuristic{},
+	}, nil
 }
 
-// Run measures one fixture through rewrite plus the full compaction cascade.
+// Run measures one fixture through rewrite plus the full compaction cascade,
+// including the audit footer the agent path appends, so savings thresholds
+// and goldens account for its token cost. The recover hash is computed but
+// nothing is written -- bench stays hermetic.
 func (p *Pipeline) Run(f Fixture) Result {
 	executed, rule, _ := p.rewriter.RewriteRule(f.Command)
-	out, handler := p.registry.Compact(executed, f.Raw, f.Stderr, f.Exit)
+	d := p.registry.CompactDetail(executed, f.Raw, f.Stderr, f.Exit, false)
+	out, handler := d.Text, d.Handler
 	if handler == "" {
 		out = strings.TrimRight(f.Raw, "\n")
 		if f.Stderr != "" {
 			out += "\n[stderr] " + strings.TrimRight(f.Stderr, "\n")
+		}
+	} else {
+		fi := compact.FooterInfo{
+			Groups:    d.Groups,
+			RawLines:  compact.CountLines(f.Raw) + compact.CountLines(f.Stderr),
+			RawBytes:  len(f.Raw) + len(f.Stderr),
+			EstTokens: compact.EstDroppedTokens(f.Raw+f.Stderr, out),
+			Recover:   rawcache.Hash(f.Raw, f.Stderr),
+		}
+		if !fi.Suppressed() {
+			out += "\n" + compact.RenderFooter(fi)
 		}
 	}
 	// Only announce rewrites the rule opts in to. Bench measures the audit
@@ -166,8 +192,8 @@ func (p *Pipeline) Run(f Fixture) Result {
 	if baseline == "" {
 		baseline = f.Raw
 	}
-	rawToks := analyzer.EstimateTokens(baseline)
-	outToks := analyzer.EstimateTokens(out)
+	rawToks, _ := p.counter.Count(baseline)
+	outToks, _ := p.counter.Count(out)
 	pct := 0.0
 	if rawToks > 0 {
 		pct = float64(rawToks-outToks) / float64(rawToks) * 100
@@ -178,8 +204,15 @@ func (p *Pipeline) Run(f Fixture) Result {
 	}
 }
 
-// RunAll loads the corpus and measures every fixture.
+// RunAll loads the corpus and measures every fixture with the default
+// char-based estimator.
 func RunAll() ([]Result, error) {
+	return RunAllWith(counter.CharHeuristic{})
+}
+
+// RunAllWith loads the corpus and measures every fixture with the given
+// tokenizer.
+func RunAllWith(c counter.Counter) ([]Result, error) {
 	fixtures, err := LoadCorpus()
 	if err != nil {
 		return nil, err
@@ -188,6 +221,7 @@ func RunAll() ([]Result, error) {
 	if err != nil {
 		return nil, err
 	}
+	p.SetCounter(c)
 	results := make([]Result, len(fixtures))
 	for i, f := range fixtures {
 		results[i] = p.Run(f)
@@ -247,10 +281,11 @@ func RenderTable(results []Result) string {
 }
 
 // ReadmeTable renders the markdown savings table for fixtures marked
-// readme: true. Fixtures sharing a group label aggregate into one general
+// readme: true, followed by a footnote naming the tokenizer the counts were
+// measured with. Fixtures sharing a group label aggregate into one general
 // row (e.g. all git fixtures become a single "git" row), keeping the
 // published table at the tool level rather than per-fixture.
-func ReadmeTable(results []Result) string {
+func ReadmeTable(results []Result, tokenizer string) string {
 	type agg struct {
 		label   string
 		rawToks int64
@@ -288,6 +323,7 @@ func ReadmeTable(results []Result) string {
 		fmt.Fprintf(&b, "| `%s` | %d tok | %d tok | %.0f%% |\n",
 			g.label, g.rawToks, g.outToks, pct)
 	}
+	fmt.Fprintf(&b, "\n<sub>Token counts: %s.</sub>\n", tokenizer)
 	return b.String()
 }
 
@@ -298,7 +334,7 @@ const (
 
 // UpdateReadme replaces the savings table between the bench markers in the
 // file at path. Returns whether the file changed.
-func UpdateReadme(path string, results []Result) (bool, error) {
+func UpdateReadme(path string, results []Result, tokenizer string) (bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return false, err
@@ -309,7 +345,7 @@ func UpdateReadme(path string, results []Result) (bool, error) {
 	if begin < 0 || end < 0 || end < begin {
 		return false, fmt.Errorf("bench: markers %s / %s not found in %s", readmeBegin, readmeEnd, path)
 	}
-	updated := s[:begin+len(readmeBegin)] + "\n" + ReadmeTable(results) + s[end:]
+	updated := s[:begin+len(readmeBegin)] + "\n" + ReadmeTable(results, tokenizer) + s[end:]
 	if updated == s {
 		return false, nil
 	}

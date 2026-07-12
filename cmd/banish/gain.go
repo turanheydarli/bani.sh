@@ -48,6 +48,7 @@ func gainCmd() *cobra.Command {
 				json.Unmarshal(b, &m)
 				m["est_cost_usd"] = roundCents(costSaved)
 				m["price_per_mtok"] = price
+				m["tokenizer"] = "char-based estimate (~4 chars/token, approx)"
 				out, _ := json.Marshal(m)
 				fmt.Println(string(out))
 				return nil
@@ -106,6 +107,7 @@ func printGain(s *analyzer.Stats, costSaved float64) {
 	if s.Rewrites > 0 {
 		printKV("Commands rewritten", fmt.Sprintf("%d", s.Rewrites))
 	}
+	printKV("Tokenizer", "char-based estimate (~4 chars/token, approx)")
 
 	fmt.Println()
 

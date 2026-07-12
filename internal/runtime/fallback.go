@@ -2,11 +2,14 @@ package runtime
 
 import (
 	"context"
+	"os"
 	"strings"
 
 	"go.banish.sh/banish/internal/ast"
 	"go.banish.sh/banish/internal/compact"
 	"go.banish.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/rawcache"
+	"go.banish.sh/banish/internal/token/counter"
 )
 
 // FallbackHandler returns a VerbHandler that executes unknown verbs as OS
@@ -92,15 +95,36 @@ func FallbackHandler(exec *Executor, scriptFilters []compact.ScriptFilterDef, re
 
 // applyCompaction runs the output through the compaction cascade if anything
 // matches, otherwise falls back to raw output. Tracks raw vs compacted sizes.
+// Compacted output that dropped lines gets the audit footer (with a recover
+// hash when the raw cache is enabled); BANISH_TRACE=1 swaps silent drops for
+// inline annotations.
 func applyCompaction(filters *compact.Registry, cmdline, stdout, stderr string, exitCode int) *interpreter.Result {
-	text, handler := filters.Compact(cmdline, stdout, stderr, exitCode)
-	if handler == "" {
+	trace := os.Getenv("BANISH_TRACE") == "1"
+	d := filters.CompactDetail(cmdline, stdout, stderr, exitCode, trace)
+	text := d.Text
+	if d.Handler == "" {
 		text = strings.TrimRight(stdout, "\n")
 		if exitCode != 0 && stderr != "" {
 			if text != "" {
 				text += "\n"
 			}
 			text += "[stderr] " + strings.TrimRight(stderr, "\n")
+		}
+	} else {
+		fi := compact.FooterInfo{
+			Groups:    d.Groups,
+			RawLines:  compact.CountLines(stdout) + compact.CountLines(stderr),
+			RawBytes:  len(stdout) + len(stderr),
+			EstTokens: compact.EstDroppedTokens(stdout+stderr, text),
+			Trace:     trace,
+		}
+		if !fi.Suppressed() {
+			if rawcache.Enabled() {
+				if h, err := rawcache.Store(stdout, stderr); err == nil {
+					fi.Recover = h
+				}
+			}
+			text += "\n" + compact.RenderFooter(fi)
 		}
 	}
 
@@ -110,8 +134,8 @@ func applyCompaction(filters *compact.Registry, cmdline, stdout, stderr string, 
 	// These fields are NOT serialized to output -- only used by the analyzer.
 	rawLen := len(stdout) + len(stderr)
 	compactLen := len(text)
-	result.RawTokens = int64(rawLen / 4)
-	result.OutTokens = int64(compactLen / 4)
+	result.RawTokens, _ = counter.CharHeuristic{}.Count(stdout + stderr)
+	result.OutTokens, _ = counter.CharHeuristic{}.Count(text)
 	if rawLen > 0 && compactLen < rawLen {
 		result.SavedPct = (rawLen - compactLen) * 100 / rawLen
 	}

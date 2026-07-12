@@ -48,7 +48,15 @@ per ecosystem, embedded into the binary at build time. Add your filter to the
 matching file (or create a new one), then `go install` and try it with
 `banish "docker build ."`. Keep the one-liner simple: reach for `grep`, `sed`,
 `head`, `tail`, `cut`, and `awk` before anything heavier. If a filter fails,
-banish returns the raw output, so a partial contribution never breaks anyone.
+banish falls back to the raw output - a filter can reduce what the agent
+reads, never lose it.
+
+Drop accounting is automatic: every line your filter removes is counted per
+stage (`<name>.pipe` for the `!compact` shell pipe, `<name>.drop`,
+`<name>.per-group`, `<name>.max-lines` for declarative ops) and surfaces in
+the audit footer on large outputs. To see exactly where your filter drops
+content while developing it, run with `BANISH_TRACE=1` - each dropped run is
+annotated inline instead of removed silently.
 
 ## Open the PR
 

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"go.banish.sh/banish/internal/interpreter"
+	"go.banish.sh/banish/internal/rawcache"
 )
 
 // bshQuote encodes s as a .bsh double-quoted string. It escapes exactly the
@@ -125,6 +126,12 @@ func (s *Server) handleToolsCall(ctx context.Context, req *Request) *Response {
 	// Strip "banish_" prefix from tool name to get the actual verb.
 	verb := strings.TrimPrefix(params.Name, "banish_")
 
+	// banish_raw reads the raw output cache directly -- it must return the
+	// cached bytes verbatim, never through the compaction pipeline.
+	if verb == "raw" {
+		return s.handleRawTool(req, params)
+	}
+
 	// Special case: banish_run takes a "script" argument that IS the command.
 	var cmd string
 	if verb == "run" {
@@ -173,6 +180,24 @@ func (s *Server) handleToolsCall(ctx context.Context, req *Request) *Response {
 	return &Response{JSONRPC: "2.0", ID: req.ID, Result: result}
 }
 
+// handleRawTool serves banish_raw: recover the uncompacted output of a
+// recent command by the hash printed in the audit footer.
+func (s *Server) handleRawTool(req *Request, params ToolCallParams) *Response {
+	hash := fmt.Sprint(params.Arguments["hash"])
+	data, err := rawcache.Get(hash)
+	if err != nil {
+		return &Response{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &RPCError{Code: -32000, Message: err.Error()},
+		}
+	}
+	result, _ := json.Marshal(ToolResult{
+		Content: []ContentBlock{{Type: "text", Text: string(data)}},
+	})
+	return &Response{JSONRPC: "2.0", ID: req.ID, Result: result}
+}
+
 func (s *Server) buildToolsList() []ToolDef {
 	// Core tools with examples in descriptions (for agent in-context learning).
 	tools := []ToolDef{
@@ -208,6 +233,17 @@ func (s *Server) buildToolsList() []ToolDef {
 					"path": map[string]string{"type": "string", "description": "File path to read"},
 				},
 				"required": []string{"path"},
+			},
+		},
+		{
+			Name:        "banish_raw",
+			Description: "Recover the uncompacted output of a recent command. Compacted results end with an audit footer naming the hash:\n  recover: banish raw a1b2c3d4\nPass that hash to get the raw stdout+stderr verbatim. Use only when the compacted output is missing something you actually need -- the footer's group labels say what kind of lines were dropped (warnings, passing tests, overflow), and recovering re-reads the full raw output. Entries expire (default 1 hour).",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"hash": map[string]string{"type": "string", "description": "Recover hash from the audit footer"},
+				},
+				"required": []string{"hash"},
 			},
 		},
 		{
