@@ -422,11 +422,33 @@ func writeClaudeMD(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		existing, _ := os.ReadFile(path)
 		if strings.Contains(string(existing), "## Banish") {
-			return nil
+			// Refresh the existing block in place so users who installed an
+			// older version pick up new capabilities on re-init.
+			updated := replaceBanishSection(string(existing), string(content))
+			if updated == string(existing) {
+				return nil
+			}
+			return os.WriteFile(path, []byte(updated), 0644)
 		}
 		return os.WriteFile(path, append(append(existing, '\n'), content...), 0644)
 	}
 	return os.WriteFile(path, content, 0644)
+}
+
+// replaceBanishSection swaps the "## Banish" block (up to the next top-level
+// "## " heading or EOF) for the current awareness content. Subsections
+// ("### ...") belong to the block and are replaced with it.
+func replaceBanishSection(existing, content string) string {
+	start := strings.Index(existing, "## Banish")
+	if start < 0 {
+		return existing
+	}
+	rest := existing[start:]
+	end := len(existing)
+	if i := strings.Index(rest[1:], "\n## "); i >= 0 {
+		end = start + 1 + i + 1 // keep the newline before the next heading
+	}
+	return existing[:start] + strings.TrimRight(content, "\n") + "\n" + existing[end:]
 }
 
 // --- Cursor ---
