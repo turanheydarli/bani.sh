@@ -34,7 +34,7 @@ func maybeNotifyUpdate() {
 	if !updateCheckEnabled() {
 		return
 	}
-	tag := selfupdate.LatestCached(2 * time.Second)
+	tag := selfupdate.LatestCached(2*time.Second, selfupdate.ResolveChannel("", version))
 	if tag == "" {
 		return
 	}
@@ -54,6 +54,7 @@ func noticeAllowed(name string) bool { return noticeCommands[name] }
 
 func upgradeCmd() *cobra.Command {
 	var checkOnly bool
+	var channelFlag string
 
 	cmd := &cobra.Command{
 		Use:   "upgrade",
@@ -61,32 +62,50 @@ func upgradeCmd() *cobra.Command {
 		Long: `Download the latest banish release, verify its checksum, and replace
 the running binary in place.
 
-  banish upgrade           Install the latest release
-  banish upgrade --check   Report whether a newer release exists, without installing
+  banish upgrade                  Install the latest release
+  banish upgrade --check          Report whether a newer release exists, without installing
+  banish upgrade --channel beta   Also consider prereleases (release candidates)
+
+The channel defaults to "channel" in ~/.banish/config.json, and a binary
+already running a prerelease tracks the beta channel automatically. Set
+{"channel": "beta"} in the config to keep receiving candidates without
+passing the flag each time.
 
 Set BANISH_NO_UPDATE_CHECK=1 to silence the periodic update notice.`,
 		Args: cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
+			if channelFlag != "" {
+				if _, err := selfupdate.ParseChannel(channelFlag); err != nil {
+					return err
+				}
+			}
+			channel := selfupdate.ResolveChannel(channelFlag, version)
+
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 
-			rel, err := selfupdate.Latest(ctx)
+			rel, err := selfupdate.LatestForChannel(ctx, channel)
 			if err != nil {
 				return fmt.Errorf("check for updates: %w", err)
 			}
 
+			label := rel.Tag
+			if rel.Prerelease {
+				label += " (prerelease)"
+			}
+
 			if !selfupdate.IsNewer(rel.Tag, version) {
-				fmt.Printf("banish is up to date (%s).\n", version)
+				fmt.Printf("banish is up to date (%s, %s channel).\n", version, channel)
 				return nil
 			}
 
 			if checkOnly {
-				fmt.Printf("banish %s is available (you have %s). Run 'banish upgrade' to install.\n", rel.Tag, version)
+				fmt.Printf("banish %s is available (you have %s). Run 'banish upgrade' to install.\n", label, version)
 				return nil
 			}
 
 			ver := trimV(rel.Tag)
-			fmt.Printf("banish: upgrading %s -> %s\n", version, rel.Tag)
+			fmt.Printf("banish: upgrading %s -> %s\n", version, label)
 			path, err := selfupdate.Apply(ctx, rel, ver)
 			if err != nil {
 				return err
@@ -97,6 +116,7 @@ Set BANISH_NO_UPDATE_CHECK=1 to silence the periodic update notice.`,
 	}
 
 	cmd.Flags().BoolVar(&checkOnly, "check", false, "report whether a newer release exists, without installing")
+	cmd.Flags().StringVar(&channelFlag, "channel", "", "release channel: stable or beta (default: config, else inferred from the running version)")
 	return cmd
 }
 

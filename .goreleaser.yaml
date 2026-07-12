@@ -44,7 +44,10 @@ homebrew_casks:
     # Dormant until you create the turanheydarli/homebrew-tap repo and add a
     # HOMEBREW_TAP_TOKEN secret (a PAT with contents:write on that repo). Without
     # the token the cask is generated but not pushed, so releases stay green.
-    skip_upload: '{{ if eq (envOrDefault "HOMEBREW_TAP_TOKEN" "") "" }}true{{ else }}false{{ end }}'
+    # With a token, "auto" still skips the push for prerelease tags
+    # (v1.2.3-beta.1) so the tap only ever serves stable releases; beta users
+    # opt in via "banish upgrade --channel beta" or BANISH_CHANNEL=beta.
+    skip_upload: '{{ if eq (envOrDefault "HOMEBREW_TAP_TOKEN" "") "" }}true{{ else }}auto{{ end }}'
     homepage: "https://banish.sh"
     description: "Token-optimized middleware for LLM coding agents."
     # Unsigned binary: clear the macOS quarantine flag on install.

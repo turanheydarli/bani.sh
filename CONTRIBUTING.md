@@ -48,7 +48,15 @@ per ecosystem, embedded into the binary at build time. Add your filter to the
 matching file (or create a new one), then `go install` and try it with
 `banish "docker build ."`. Keep the one-liner simple: reach for `grep`, `sed`,
 `head`, `tail`, `cut`, and `awk` before anything heavier. If a filter fails,
-banish returns the raw output, so a partial contribution never breaks anyone.
+banish falls back to the raw output - a filter can reduce what the agent
+reads, never lose it.
+
+Drop accounting is automatic: every line your filter removes is counted per
+stage (`<name>.pipe` for the `!compact` shell pipe, `<name>.drop`,
+`<name>.per-group`, `<name>.max-lines` for declarative ops) and surfaces in
+the audit footer on large outputs. To see exactly where your filter drops
+content while developing it, run with `BANISH_TRACE=1` - each dropped run is
+annotated inline instead of removed silently.
 
 ## Open the PR
 
@@ -56,6 +64,28 @@ Branch off `main` with a short, descriptive name (`filter-docker-build`,
 `fix-git-status-empty`). A good PR description says what it changes and shows a
 quick before/after token count if you have one. Don't worry about a perfect diff - maintainers
 will help shape it. The goal is the merge, not a flawless first try.
+
+## Releases (maintainers)
+
+Releases are cut from the Actions UI, not from a local machine: run the
+`tag-release` workflow, pick a channel, and enter the core version (e.g.
+`0.6.0`). The workflow computes and pushes the tag, which triggers the
+GoReleaser pipeline.
+
+- `beta` tags `v0.6.0-beta.N` (N auto-increments) - a release candidate,
+  published as a GitHub prerelease. Only developers who opted in see it:
+  `banish upgrade --channel beta`, `{"channel": "beta"}` in
+  `~/.banish/config.json`, or `BANISH_CHANNEL=beta` with the install script.
+- `rc` works the same with `v0.6.0-rc.N`, for the final candidate before a
+  stable release.
+- `stable` tags `v0.6.0` - the global release. `/releases/latest`, the
+  install script, Homebrew, and plain `banish upgrade` all move to it, beta
+  users included.
+
+Prereleases never reach the Homebrew tap or the Discord announcement; both
+are keyed off the `-` in the tag. The workflow needs a `RELEASE_TOKEN`
+secret (a fine-grained PAT with contents:write on this repo), because tags
+pushed with the default `GITHUB_TOKEN` do not trigger downstream workflows.
 
 ## Recognition
 

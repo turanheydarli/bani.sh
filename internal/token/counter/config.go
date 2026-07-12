@@ -1,9 +1,7 @@
 package counter
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
+	"go.banish.sh/banish/internal/config"
 )
 
 // Config is the tokenizer section of ~/.banish/config.json. The default is
@@ -12,26 +10,15 @@ import (
 //
 //	{"tokenizer": "anthropic", "tokenizer_model": "claude-opus-4-8"}
 type Config struct {
-	Tokenizer      string `json:"tokenizer"`       // "heuristic" (default) or "anthropic"
-	TokenizerModel string `json:"tokenizer_model"` // defaults to DefaultModel
+	Tokenizer      string // "heuristic" (default) or "anthropic"
+	TokenizerModel string // defaults to DefaultModel
 }
 
-// LoadConfig reads ~/.banish/config.json. A missing or unparseable file
-// yields the defaults.
+// LoadConfig reads the tokenizer settings via the shared config loader
+// (internal/config). Missing fields yield the defaults.
 func LoadConfig() Config {
 	cfg := Config{Tokenizer: "heuristic", TokenizerModel: DefaultModel}
-	home, err := os.UserHomeDir()
-	if err != nil || home == "" {
-		return cfg
-	}
-	data, err := os.ReadFile(filepath.Join(home, ".banish", "config.json"))
-	if err != nil {
-		return cfg
-	}
-	var file Config
-	if json.Unmarshal(data, &file) != nil {
-		return cfg
-	}
+	file := config.Load()
 	if file.Tokenizer != "" {
 		cfg.Tokenizer = file.Tokenizer
 	}

@@ -99,3 +99,7 @@ total 1040
 -rw-r--r--   1 yasin  staff    1098 Jul  6 12:38 file098.txt
 -rw-r--r--   1 yasin  staff    1099 Jul  6 12:39 file099.txt
 +31 more entries
+--- banish: dropped 31 lines ---
+  groups:
+    - filter: ls.max-lines  lines: 31
+  recover: banish raw dc3a8173 (costs ~468 tokens, only if needed)

@@ -21,24 +21,45 @@ type ScriptFilterDef struct {
 // ScriptFilter wraps a ScriptFilterDef into a Filter function.
 func ScriptFilter(def ScriptFilterDef) Filter {
 	return func(stdout, stderr string, exitCode int) string {
-		raw := stdout
-		if stderr != "" && exitCode != 0 {
-			raw = stdout + "\n" + stderr
-		}
-
-		text := raw
-		if def.Compact != "" {
-			out, err := runScript(def.Compact, raw)
-			if err != nil {
-				// Script failed -- return raw output rather than losing data
-				return strings.TrimRight(raw, "\n")
-			}
-			text = out
-		}
-
-		text = def.Ops.Apply(strings.TrimRight(text, "\n"))
-		return strings.TrimRight(text, "\n")
+		text, _ := ScriptFilterDetail(def, stdout, stderr, exitCode, false)
+		return text
 	}
+}
+
+// ScriptFilterDetail runs a script filter and accounts for every line each
+// stage removed. Shell pipes (!compact) are opaque, so their drops are the
+// before/after line-count diff attributed to "<name>.pipe"; declarative ops
+// account per op. In trace mode dropped runs are annotated inline (the pipe
+// annotation goes at the end because the drop positions are unknown).
+func ScriptFilterDetail(def ScriptFilterDef, stdout, stderr string, exitCode int, trace bool) (string, []DroppedGroup) {
+	raw := stdout
+	if stderr != "" && exitCode != 0 {
+		raw = stdout + "\n" + stderr
+	}
+
+	var groups []DroppedGroup
+	pipeDropped := 0
+	text := raw
+	if def.Compact != "" {
+		out, err := runScript(def.Compact, raw)
+		if err != nil {
+			// Script failed -- return raw output rather than losing data
+			return strings.TrimRight(raw, "\n"), nil
+		}
+		pipeDropped = CountLines(raw) - CountLines(strings.TrimRight(out, "\n"))
+		if pipeDropped > 0 {
+			groups = append(groups, DroppedGroup{Filter: def.Name + ".pipe", Lines: pipeDropped})
+		}
+		text = out
+	}
+
+	text, opGroups := def.Ops.ApplyDetail(strings.TrimRight(text, "\n"), def.Name, trace)
+	groups = append(groups, opGroups...)
+	text = strings.TrimRight(text, "\n")
+	if trace && pipeDropped > 0 {
+		text += "\n" + traceAnnotation(pipeDropped, def.Name+".pipe")
+	}
+	return text, groups
 }
 
 // runScript executes a shell command with input piped to stdin.
