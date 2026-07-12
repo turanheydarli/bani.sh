@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"go.banish.sh/banish/internal/config"
 )
 
 // Repo is the GitHub slug releases are published under. It intentionally does
@@ -71,21 +73,7 @@ func ResolveChannel(flag, current string) Channel {
 // configuredChannel reads the "channel" field from ~/.banish/config.json.
 // Missing file or field yields "".
 func configuredChannel() string {
-	home, err := os.UserHomeDir()
-	if err != nil || home == "" {
-		return ""
-	}
-	data, err := os.ReadFile(filepath.Join(home, ".banish", "config.json"))
-	if err != nil {
-		return ""
-	}
-	var cfg struct {
-		Channel string `json:"channel"`
-	}
-	if json.Unmarshal(data, &cfg) != nil {
-		return ""
-	}
-	return cfg.Channel
+	return config.Load().Channel
 }
 
 // Release is the subset of the GitHub release payload banish needs.
