@@ -37,7 +37,7 @@ func runCmd() *cobra.Command {
 			tracker := analyzer.New()
 			tracker.LoadFrequency()
 
-			inputToks := analyzer.EstimateTokens(source)
+			inputToks := analyzer.EstimateTokensCharBased(source)
 
 			result, err := interp.EvalSource(source)
 			if err != nil {
@@ -46,7 +46,7 @@ func runCmd() *cobra.Command {
 
 			if result != nil {
 				printed, show := renderOutput(result, flagHuman || interp.Human())
-				outputToks := analyzer.EstimateTokens(printed)
+				outputToks := analyzer.EstimateTokensCharBased(printed)
 
 				var saved int64
 				if result.RawTokens > 0 || result.OutTokens > 0 {

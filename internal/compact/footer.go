@@ -3,6 +3,8 @@ package compact
 import (
 	"fmt"
 	"strings"
+
+	"go.banish.sh/banish/internal/token/counter"
 )
 
 // DroppedGroup accounts for lines a single filter stage removed from the
@@ -85,14 +87,14 @@ func RenderFooter(fi FooterInfo) string {
 }
 
 // EstDroppedTokens estimates the token count of content dropped between raw
-// and compacted text (~4 chars per token). Never a network counter -- this
-// runs on the hot path.
+// and compacted text via the shared char heuristic. Never a network counter
+// -- this runs on the hot path of every command.
 func EstDroppedTokens(raw, out string) int64 {
-	diff := len(raw) - len(out)
-	if diff <= 0 {
+	if len(raw) <= len(out) {
 		return 0
 	}
-	return int64(diff) / 4
+	n, _ := counter.CharHeuristic{}.Count(raw[:len(raw)-len(out)])
+	return n
 }
 
 // CountLines counts newline-separated lines in s ("" = 0 lines). A single

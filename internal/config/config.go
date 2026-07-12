@@ -51,6 +51,12 @@ type Config struct {
 	Channel string `json:"channel"`
 	// Cache configures the raw output cache.
 	Cache Cache `json:"cache"`
+	// Tokenizer selects the token counter: "heuristic" (default) or
+	// "anthropic" (see internal/token/counter).
+	Tokenizer string `json:"tokenizer"`
+	// TokenizerModel is the model whose tokenizer the anthropic counter
+	// queries. Empty means the counter package's default.
+	TokenizerModel string `json:"tokenizer_model"`
 }
 
 // Load reads ~/.banish/config.json. A missing or unparseable file yields

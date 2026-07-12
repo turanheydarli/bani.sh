@@ -119,7 +119,7 @@ func execDirect(source string) {
 	interp := newInterpreter()
 	tracker := analyzer.New()
 	tracker.LoadFrequency() // load persistent data
-	inputToks := analyzer.EstimateTokens(source)
+	inputToks := analyzer.EstimateTokensCharBased(source)
 
 	result, err := interp.EvalSource(source)
 	if err != nil {
@@ -131,7 +131,7 @@ func execDirect(source string) {
 		// Measure what actually gets printed (including any JSON envelope)
 		// so savings reflect what the agent reads, not an intermediate form.
 		printed, show := renderOutput(result, flagHuman || interp.Human())
-		outputToks := analyzer.EstimateTokens(printed)
+		outputToks := analyzer.EstimateTokensCharBased(printed)
 
 		var saved int64
 		if result.RawTokens > 0 || result.OutTokens > 0 {
