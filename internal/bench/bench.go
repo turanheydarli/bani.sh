@@ -21,6 +21,7 @@ import (
 	"go.banish.sh/banish/internal/analyzer"
 	"go.banish.sh/banish/internal/compact"
 	"go.banish.sh/banish/internal/extension"
+	"go.banish.sh/banish/internal/rawcache"
 )
 
 // benchNow pins the clock used by time-sensitive renderers (gh ages, etc.)
@@ -144,14 +145,29 @@ func NewPipeline() (*Pipeline, error) {
 	return &Pipeline{registry: reg, rewriter: compact.NewRewriter(rules)}, nil
 }
 
-// Run measures one fixture through rewrite plus the full compaction cascade.
+// Run measures one fixture through rewrite plus the full compaction cascade,
+// including the audit footer the agent path appends, so savings thresholds
+// and goldens account for its token cost. The recover hash is computed but
+// nothing is written -- bench stays hermetic.
 func (p *Pipeline) Run(f Fixture) Result {
 	executed, rule, _ := p.rewriter.RewriteRule(f.Command)
-	out, handler := p.registry.Compact(executed, f.Raw, f.Stderr, f.Exit)
+	d := p.registry.CompactDetail(executed, f.Raw, f.Stderr, f.Exit, false)
+	out, handler := d.Text, d.Handler
 	if handler == "" {
 		out = strings.TrimRight(f.Raw, "\n")
 		if f.Stderr != "" {
 			out += "\n[stderr] " + strings.TrimRight(f.Stderr, "\n")
+		}
+	} else {
+		fi := compact.FooterInfo{
+			Groups:    d.Groups,
+			RawLines:  compact.CountLines(f.Raw) + compact.CountLines(f.Stderr),
+			RawBytes:  len(f.Raw) + len(f.Stderr),
+			EstTokens: compact.EstDroppedTokens(f.Raw+f.Stderr, out),
+			Recover:   rawcache.Hash(f.Raw, f.Stderr),
+		}
+		if !fi.Suppressed() {
+			out += "\n" + compact.RenderFooter(fi)
 		}
 	}
 	// Only announce rewrites the rule opts in to. Bench measures the audit

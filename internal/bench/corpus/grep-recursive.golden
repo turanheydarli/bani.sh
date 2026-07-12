@@ -22,3 +22,7 @@ internal/extension/extension.go:21:	// TODO: handle edge case 3 in extension.go
 internal/extension/extension.go:28:	// TODO: handle edge case 4 in extension.go
 internal/extension/extension.go:35:	// TODO: handle edge case 5 in extension.go
 +10 more matches
+--- banish: dropped 40 lines ---
+  groups:
+    - filter: grep.per-group  lines: 40
+  recover: banish raw ad5a6972 (costs ~700 tokens, only if needed)
