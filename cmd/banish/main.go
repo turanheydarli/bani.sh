@@ -106,6 +106,7 @@ Usage:
 	root.AddCommand(benchCmd())
 	root.AddCommand(upgradeCmd())
 	root.AddCommand(uninstallCmd())
+	root.AddCommand(rawCmd())
 
 	if err := root.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "{\"e\":\"CLI\",\"m\":%q}\n", err.Error())
@@ -170,6 +171,9 @@ var subcommands = map[string]bool{
 	"serve": true, "gain": true, "init": true, "help": true,
 	"stop": true, "start": true, "status": true, "hook": true, "audit": true,
 	"discover": true, "learn": true, "bench": true, "upgrade": true, "uninstall": true,
+	// raw prints cached uncompacted output; without this entry it would
+	// fall through to the shell passthrough and exec /usr/bin/raw.
+	"raw": true,
 	// Shell completion: the cobra-generated scripts call the hidden
 	// __complete/__completeNoDesc commands at tab time, so all three must
 	// bypass the direct-exec fast path.
