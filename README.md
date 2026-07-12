@@ -118,7 +118,7 @@ automatically on every merge to main - reproduce it any time with
 | Command | Raw | Compacted | Savings |
 |---------|-----|-----------|---------|
 | `git (status, diff, log)` | 803 tok | 236 tok | 71% |
-| `grep -rn` | 1071 tok | 370 tok | 65% |
+| `grep -rn` | 1071 tok | 408 tok | 62% |
 | `go test` | 330 tok | 41 tok | 88% |
 | `npm install` | 95 tok | 35 tok | 63% |
 | `cargo build` | 265 tok | 17 tok | 94% |
@@ -131,6 +131,8 @@ automatically on every merge to main - reproduce it any time with
 | `gcloud (compute, gke, run, sql, builds)` | 4645 tok | 670 tok | 86% |
 | `az (vm, storage, webapp, aks, activity)` | 4492 tok | 707 tok | 84% |
 | `aws (ec2, lambda, cf, logs, iam)` | 6486 tok | 1146 tok | 82% |
+
+<sub>Token counts: char-based estimate (~4 chars/token, approx).</sub>
 <!-- bench:end -->
 
 Ships with filters for git, docker, kubectl, npm/yarn/pnpm, cargo, maven, gradle,
